@@ -14,7 +14,8 @@ import jwt
 from bson import ObjectId
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, EmailStr
+from typing import Literal
+from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.cors import CORSMiddleware
 
 client = AsyncIOMotorClient(os.environ['MONGO_URL'])
@@ -155,9 +156,9 @@ class ProfileIn(BaseModel):
 
 
 class EventIn(BaseModel):
-    title: str
-    type: str = "evento"
-    date: str
+    title: str = Field(min_length=1)
+    type: Literal["evento", "encontro"] = "evento"
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}")
     location: str = ""
     description: str = ""
     image_url: str = ""
@@ -180,7 +181,7 @@ class SettingsIn(BaseModel):
     hero_image: Optional[str] = None
     primary_color: Optional[str] = None
     accent_color: Optional[str] = None
-    monthly_fee: Optional[float] = None
+    monthly_fee: Optional[float] = Field(default=None, ge=0)
     city: Optional[str] = None
     founded_year: Optional[str] = None
     contact_email: Optional[str] = None
@@ -194,10 +195,13 @@ class SettingsIn(BaseModel):
 @api.post("/auth/login")
 async def login(body: LoginIn, request: Request, response: Response):
     email = body.email.lower()
-    ident = f"{request.client.host if request.client else 'x'}:{email}"
+    ident = email
     att = await db.login_attempts.find_one({"identifier": ident})
-    if att and att.get("count", 0) >= 5 and att.get("locked_until") and att["locked_until"].replace(tzinfo=timezone.utc) > now():
-        raise HTTPException(429, "Muitas tentativas. Tente novamente em 15 minutos.")
+    if att and att.get("locked_until"):
+        if att["locked_until"].replace(tzinfo=timezone.utc) > now():
+            raise HTTPException(429, "Muitas tentativas. Tente novamente em 15 minutos.")
+        await db.login_attempts.delete_many({"identifier": ident})
+        att = None
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(body.password, user["password_hash"]):
         count = (att or {}).get("count", 0) + 1
@@ -259,7 +263,7 @@ async def write_settings(body: SettingsIn, _: dict = Depends(admin_user)):
 
 @api.get("/public/stats")
 async def public_stats():
-    members = await db.users.count_documents({"active": True})
+    members = await db.users.count_documents({"active": True, "role": "member"})
     year = now().year
     events_year = await db.events.count_documents({"date": {"$regex": f"^{year}"}})
     upcoming = await db.events.count_documents({"date": {"$gte": now().strftime("%Y-%m-%d")}})
@@ -354,7 +358,9 @@ async def update_event(eid: str, body: EventIn, _: dict = Depends(admin_user)):
 
 @api.delete("/events/{eid}")
 async def delete_event(eid: str, _: dict = Depends(admin_user)):
-    await db.events.delete_one({"_id": oid(eid)})
+    r = await db.events.delete_one({"_id": oid(eid)})
+    if not r.deleted_count:
+        raise HTTPException(404, "Evento não encontrado")
     return {"ok": True}
 
 
@@ -372,7 +378,7 @@ async def rsvp(eid: str, user: dict = Depends(current_user)):
 # ---------- dues ----------
 @api.get("/dues")
 async def dues_grid(year: int, _: dict = Depends(admin_user)):
-    members = await db.users.find({}).sort("name", 1).to_list(2000)
+    members = await db.users.find({"role": "member"}).sort("name", 1).to_list(2000)
     pays = await db.payments.find({"year": year}).to_list(50000)
     paid = {}
     for p in pays:
@@ -409,7 +415,7 @@ async def my_dues(year: int, user: dict = Depends(current_user)):
 @api.get("/admin/overview")
 async def overview(_: dict = Depends(admin_user)):
     t = now()
-    total = await db.users.count_documents({"active": True})
+    total = await db.users.count_documents({"active": True, "role": "member"})
     paid_month = await db.payments.count_documents({"year": t.year, "month": t.month, "paid": True})
     pays_year = await db.payments.find({"year": t.year, "paid": True}).to_list(50000)
     revenue_year = sum(p.get("amount", 0) for p in pays_year)

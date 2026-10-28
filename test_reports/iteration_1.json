@@ -1,0 +1,52 @@
+{
+  "summary": "First full E2E run of the Biker 85 Girls moto club system (FastAPI + React). Backend: 19 pytest cases, 18 pass. The one failure is real: brute-force lockout does not work behind the ingress. Frontend (Playwright, desktop 1920 and mobile 390): landing, admin login, member CRUD and duplicate email, dues toggle with persistence and overview update, event/encontro create and edit, RSVP toggle, member blocked from /admin, profile and password change, Personalização (name, colour, fee, logo upload) shown on the landing, deactivation and inactive login. All of these work. Settings were restored and all TEST_ data was deleted.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/auth/login", "issue": "Brute-force lockout does not work in this deployment. The lockout key is f'{request.client.host}:{email}', and request.client.host is the IP of the ingress pod, which changes between requests (seen in DB: '10.201.1.194:...' count 3 and '10.201.4.160:...' count 3 after 6 failed logins). Six bad attempts all returned 401; none returned 429. Fix: take the client IP from the first X-Forwarded-For entry (fallback to request.client.host), or lock per email only.", "priority": "HIGH"},
+      {"endpoint": "CORS middleware", "issue": "CORS_ORIGINS='*' with allow_credentials=True makes Starlette echo back any Origin with Access-Control-Allow-Credentials: true. Checked: Origin https://evil.example.com was reflected. Fix: set CORS_ORIGINS to the explicit frontend origin(s).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/auth/login", "issue": "After a lock expires, count stays at 5 or more, so the next single bad attempt locks the account again for 15 minutes. Reset count when locked_until has passed."},
+      {"endpoint": "GET /api/public/stats, GET /api/admin/overview, GET /api/dues", "issue": "The admin account is counted as an active member. Public 'Membros ativos' and overview 'Pendentes' include it, and the dues matrix shows an Administração row with every month marked late (red X). Consider filtering role=member, or adding a 'pays dues' flag."},
+      {"endpoint": "POST/PUT /api/events, PUT /api/settings", "issue": "No validation of event type (evento|encontro), date format, monthly_fee >= 0 or hex colours. DELETE /api/events/{id} returns 200 even when the event does not exist."},
+      {"endpoint": "POST /api/auth/refresh", "issue": "A refresh_token cookie is set, but there is no refresh endpoint. Sessions simply expire after 1 day."},
+      {"endpoint": "GET /api/public/stats", "issue": "Comparisons for upcoming and events_year use the server's UTC date, while event dates are stored as local datetime strings with no timezone. This can be off by one day around midnight."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Landing Contact (Sections.jsx ContactItem)", "issue": "Every contact card uses target=_blank, including 'Base' (href #contato) and 'Desde' (href #sobre), so clicking them opens a duplicate tab of the site", "selector": "[data-testid=contact-city], [data-testid=contact-founded]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Member dialog / Profile form / Event dialog", "issues": ["Uses the browser's native date and datetime-local pickers, which render in English mm/dd/yyyy in a pt-BR app. Use the shadcn Calendar/Popover instead."]},
+      {"screen": "Landing mobile 390px", "issues": ["The section nav links (Sobre/Eventos/Galeria/Contato) are hidden and there is no hamburger menu. Only the 'Área do Membro' button is shown."]},
+      {"screen": "Admin Mensalidades", "issues": ["The admin row shows every past month as an overdue red X, which is misleading."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_moto_club_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix the brute-force lockout identifier: use X-Forwarded-For (first IP), or lock per email only",
+    "Set CORS_ORIGINS in backend/.env to the explicit frontend origin instead of '*' (credentials are enabled)",
+    "Reset login_attempts count once locked_until has expired",
+    "Exclude admin accounts (or add a 'pays dues' flag) from member counts, the dues matrix and pending stats",
+    "Remove target=_blank from in-page contact anchors (city / founded year)",
+    "Replace native date inputs with the shadcn Calendar date picker (pt-BR)",
+    "Optional: validate event type, fee >= 0 and colour hex; return 404 when deleting a missing event"
+  ],
+  "critical_code_review_comments": [
+    "server.py login(): the IP-based identifier breaks behind the k8s ingress (root cause of the failed lockout test)",
+    "CORS allow_origins=['*'] combined with allow_credentials=True reflects arbitrary origins",
+    "PUT /api/members/{id} replaces the whole document: fields not sent are reset to defaults (e.g. phone becomes ''). The UI sends the full form so it is fine today, but API clients can lose data.",
+    "The logo is stored as a base64 data URL inside settings and returned by every public GET /api/settings call. It is resized to 600px, so this is acceptable, but object storage would be better.",
+    "Seed admin is created only if missing and its password is never overwritten. Verified in code; bcrypt hash starts with $2b$; httpOnly, secure, samesite=none cookies are set on login."
+  ],
+  "updated_files": ["/app/backend/tests/test_moto_club_api.py"],
+  "success_rate": {"backend": "95% (18/19)", "frontend": "100% of requested flows passed"},
+  "test_credentials": "Admin gms1@gmsolutionti.com.br / Biker85@Admin (from /app/memory/test_credentials.md) - works",
+  "seed_data_creation": "None left. All TEST_ members, events and payments were deleted. Settings were restored to Biker 85 Girls / #e85a9b / #ff2a85 / 30 / /logo.png. Only the admin and the 2 [Exemplo] events remain.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=<url> pytest /app/backend/tests/test_moto_club_api.py. The fixtures create and delete their own TEST_ members. test_brute_force_lockout uses a random non-existent email, so it never locks the admin. The container date is Oct 2026, so the current dues month is 10. Test IDs: dues-cell-{uid}-{month}, member-row-{id}, member-edit-{id}, admin-event-{id}, event-rsvp-button-{id}, settings-*, profile-*-input.",
+  "rca of the issue": "Brute force: the ident is request.client.host + email. Behind the Kubernetes ingress, requests arrive from several ingress pod IPs, so failed attempts are spread across separate counters and none reaches 5. Reproduce: 6 bad logins for the same email all return 401, and db.login_attempts holds 2 or more documents with different IP prefixes. Mitigation: use the first entry of the X-Forwarded-For header, or key on email only."
+}

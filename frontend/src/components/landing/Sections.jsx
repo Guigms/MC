@@ -105,7 +105,7 @@ export const Gallery = () => {
 
 const ContactItem = ({ icon: Icon, label, value, href, testId }) =>
   value ? (
-    <a href={href} target="_blank" rel="noreferrer" className="card-metal hoverable p-5 flex items-center gap-4" data-testid={testId}>
+    <a href={href} {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})} className="card-metal hoverable p-5 flex items-center gap-4" data-testid={testId}>
       <span className="h-11 w-11 rounded-full bg-brand/15 text-brand flex items-center justify-center"><Icon size={20} /></span>
       <span><span className="block font-mono-x text-[10px] uppercase tracking-[0.25em] text-zinc-500">{label}</span><span className="text-white break-all">{value}</span></span>
     </a>

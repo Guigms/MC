@@ -8,6 +8,7 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import MemberArea from "@/pages/MemberArea";
 import AdminArea from "@/pages/AdminArea";
+import Join from "@/pages/Join";
 
 const Protected = ({ children, admin }) => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/inscricao" element={<Join />} />
       <Route path="/membro" element={<Protected><MemberArea /></Protected>} />
       <Route path="/admin" element={<Protected admin><AdminArea /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -26,7 +26,7 @@ export const Hero = () => {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
             className="mt-6 text-base sm:text-lg text-zinc-300 max-w-xl leading-relaxed">{club.hero_subtitle}</motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="mt-10 flex flex-wrap gap-4">
-            <a href="#contato" className="btn-rev px-8 py-3.5 text-base" data-testid="hero-join-button">Quero fazer parte</a>
+            <Link to="/inscricao" className="btn-rev px-8 py-3.5 text-base" data-testid="hero-join-button">Quero fazer parte</Link>
             <Link to="/login" className="btn-ghost-metal px-8 py-3.5 text-base" data-testid="hero-member-button">Já sou membro</Link>
           </motion.div>
         </div>

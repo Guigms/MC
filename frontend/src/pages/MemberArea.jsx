@@ -5,6 +5,7 @@ import { MemberCard } from "@/components/member/MemberCard";
 import { MyDues } from "@/components/member/MyDues";
 import { EventsList } from "@/components/member/EventsList";
 import { ProfileForm } from "@/components/member/ProfileForm";
+import { ProductsList } from "@/components/member/ProductsList";
 import { useAuth } from "@/context/AuthContext";
 
 export default function MemberArea() {
@@ -25,9 +26,11 @@ export default function MemberArea() {
           <Tabs defaultValue="eventos">
             <TabsList className="bg-white/5">
               <TabsTrigger value="eventos" data-testid="member-tab-events">Eventos & Encontros</TabsTrigger>
+              <TabsTrigger value="produtos" data-testid="member-tab-products">Produtos do club</TabsTrigger>
               <TabsTrigger value="perfil" data-testid="member-tab-profile">Meu perfil</TabsTrigger>
             </TabsList>
             <TabsContent value="eventos" className="mt-6"><EventsList /></TabsContent>
+            <TabsContent value="produtos" className="mt-6"><ProductsList /></TabsContent>
             <TabsContent value="perfil" className="mt-6"><ProfileForm /></TabsContent>
           </Tabs>
         </div>

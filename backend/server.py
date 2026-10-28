@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import os
+import secrets
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
@@ -430,6 +431,181 @@ async def overview(_: dict = Depends(admin_user)):
         "month": t.month,
         "year": t.year,
     }
+
+# ---------- applications (inscrições) ----------
+class ApplicationIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    whatsapp: str = Field(min_length=8, max_length=30)
+    age: Optional[int] = Field(default=None, ge=14, le=100)
+    height: Optional[str] = Field(default="", max_length=20)
+    city: str = Field(min_length=2, max_length=120)
+    profession: Optional[str] = Field(default="", max_length=120)
+    instagram: Optional[str] = Field(default="", max_length=80)
+    has_motorcycle: bool = False
+    motorcycle_model: Optional[str] = Field(default="", max_length=120)
+    riding_since: Optional[str] = Field(default="", max_length=80)
+    styles: List[Literal["passeios_longos", "trilhas", "estrada", "encontros_urbanos"]] = []
+    frequency: Optional[str] = Field(default="", max_length=80)
+    other_group: bool = False
+    reason: str = Field(min_length=10, max_length=3000)
+    commit_events: bool = False
+    has_cnh_a: bool = False
+
+
+class RejectIn(BaseModel):
+    note: Optional[str] = ""
+
+
+@api.post("/applications")
+async def create_application(body: ApplicationIn):
+    email = body.email.lower()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(400, "Este e-mail já pertence a um membro do club")
+    if await db.applications.find_one({"email": email, "status": "pending"}):
+        raise HTTPException(400, "Já existe uma inscrição em análise com este e-mail")
+    doc = body.model_dump()
+    doc.update({"email": email, "status": "pending", "created_at": now()})
+    await db.applications.insert_one(doc)
+    return {"ok": True}
+
+
+@api.get("/applications")
+async def list_applications(_: dict = Depends(admin_user)):
+    docs = await db.applications.find({}).sort("created_at", -1).to_list(2000)
+    return [clean(d) for d in docs]
+
+
+@api.post("/applications/{aid}/approve")
+async def approve_application(aid: str, admin: dict = Depends(admin_user)):
+    app_doc = await db.applications.find_one({"_id": oid(aid)})
+    if not app_doc:
+        raise HTTPException(404, "Inscrição não encontrada")
+    if app_doc["status"] != "pending":
+        raise HTTPException(400, "Esta inscrição já foi analisada")
+    if await db.users.find_one({"email": app_doc["email"]}):
+        raise HTTPException(400, "Já existe um membro com este e-mail")
+    temp = secrets.token_urlsafe(6)
+    res = await db.users.insert_one({
+        "email": app_doc["email"], "password_hash": hash_password(temp), "name": app_doc["name"],
+        "role": "member", "active": True, "nickname": "", "phone": app_doc.get("whatsapp", ""),
+        "motorcycle": app_doc.get("motorcycle_model", ""), "blood_type": "", "birth_date": "", "joined_at": now(),
+    })
+    await db.applications.update_one({"_id": app_doc["_id"]}, {"$set": {
+        "status": "approved", "reviewed_by": admin["name"], "reviewed_at": now(), "user_id": str(res.inserted_id)}})
+    return {"ok": True, "email": app_doc["email"], "temp_password": temp}
+
+
+@api.post("/applications/{aid}/reject")
+async def reject_application(aid: str, body: RejectIn, admin: dict = Depends(admin_user)):
+    r = await db.applications.update_one({"_id": oid(aid), "status": "pending"}, {"$set": {
+        "status": "rejected", "note": body.note or "", "reviewed_by": admin["name"], "reviewed_at": now()}})
+    if not r.matched_count:
+        raise HTTPException(400, "Inscrição não encontrada ou já analisada")
+    return {"ok": True}
+
+
+@api.delete("/applications/{aid}")
+async def delete_application(aid: str, _: dict = Depends(admin_user)):
+    r = await db.applications.delete_one({"_id": oid(aid)})
+    if not r.deleted_count:
+        raise HTTPException(404, "Inscrição não encontrada")
+    return {"ok": True}
+
+
+# ---------- products ----------
+class ProductIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = ""
+    image_url: str = ""
+    price: float = Field(default=0, ge=0)
+    sizes: List[str] = []
+    deadline: str = ""
+    active: bool = True
+
+
+class ProductResponseIn(BaseModel):
+    want: bool
+    size: Optional[str] = ""
+    quantity: int = Field(default=1, ge=0, le=50)
+
+
+@api.get("/products")
+async def list_products(user: dict = Depends(current_user)):
+    q = {} if user["role"] == "admin" else {"active": True}
+    docs = await db.products.find(q).sort("created_at", -1).to_list(500)
+    mine = {r["product_id"]: r for r in await db.product_orders.find({"user_id": user["id"]}).to_list(500)}
+    out = []
+    for d in docs:
+        p = clean(d)
+        r = mine.get(p["id"])
+        p["my_response"] = {"want": r["want"], "size": r.get("size", ""), "quantity": r.get("quantity", 0)} if r else None
+        out.append(p)
+    return out
+
+
+@api.post("/products")
+async def create_product(body: ProductIn, _: dict = Depends(admin_user)):
+    doc = body.model_dump()
+    doc["sizes"] = [s.strip() for s in doc["sizes"] if s.strip()]
+    doc["created_at"] = now()
+    res = await db.products.insert_one(doc)
+    return clean(await db.products.find_one({"_id": res.inserted_id}))
+
+
+@api.put("/products/{pid}")
+async def update_product(pid: str, body: ProductIn, _: dict = Depends(admin_user)):
+    doc = body.model_dump()
+    doc["sizes"] = [s.strip() for s in doc["sizes"] if s.strip()]
+    r = await db.products.update_one({"_id": oid(pid)}, {"$set": doc})
+    if not r.matched_count:
+        raise HTTPException(404, "Produto não encontrado")
+    return clean(await db.products.find_one({"_id": oid(pid)}))
+
+
+@api.delete("/products/{pid}")
+async def delete_product(pid: str, _: dict = Depends(admin_user)):
+    r = await db.products.delete_one({"_id": oid(pid)})
+    if not r.deleted_count:
+        raise HTTPException(404, "Produto não encontrado")
+    await db.product_orders.delete_many({"product_id": pid})
+    return {"ok": True}
+
+
+@api.post("/products/{pid}/response")
+async def respond_product(pid: str, body: ProductResponseIn, user: dict = Depends(current_user)):
+    p = await db.products.find_one({"_id": oid(pid)})
+    if not p or (not p.get("active") and user["role"] != "admin"):
+        raise HTTPException(404, "Produto não encontrado")
+    if body.want:
+        if p.get("sizes") and body.size not in p["sizes"]:
+            raise HTTPException(400, "Escolha um tamanho válido")
+        if body.quantity < 1:
+            raise HTTPException(400, "Quantidade mínima é 1")
+    doc = {"product_id": pid, "user_id": user["id"], "want": body.want,
+           "size": body.size if body.want else "", "quantity": body.quantity if body.want else 0, "updated_at": now()}
+    await db.product_orders.update_one({"product_id": pid, "user_id": user["id"]}, {"$set": doc}, upsert=True)
+    return {"ok": True}
+
+
+@api.get("/products/{pid}/responses")
+async def product_responses(pid: str, _: dict = Depends(admin_user)):
+    if not await db.products.find_one({"_id": oid(pid)}):
+        raise HTTPException(404, "Produto não encontrado")
+    rows = await db.product_orders.find({"product_id": pid}).to_list(5000)
+    ids = [ObjectId(r["user_id"]) for r in rows if ObjectId.is_valid(r["user_id"])]
+    users = {str(u["_id"]): u for u in await db.users.find({"_id": {"$in": ids}}).to_list(5000)}
+    by_size, total, items = {}, 0, []
+    for r in rows:
+        u = users.get(r["user_id"], {})
+        items.append({"name": u.get("name", "—"), "email": u.get("email", ""), "want": r["want"], "size": r.get("size", ""), "quantity": r.get("quantity", 0)})
+        if r["want"]:
+            total += r.get("quantity", 0)
+            key = r.get("size") or "Único"
+            by_size[key] = by_size.get(key, 0) + r.get("quantity", 0)
+    return {"total": total, "by_size": by_size, "yes": sum(1 for i in items if i["want"]), "no": sum(1 for i in items if not i["want"]), "items": items}
+
+
 
 
 app.include_router(api)

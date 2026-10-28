@@ -119,7 +119,8 @@ export const Contact = () => {
       <motion.div {...fade}>
         <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Contato</span>
         <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Bora rodar com a gente?</h2>
-        <p className="mt-5 text-zinc-400">Fale com a administração do club para conhecer os requisitos e participar de um encontro como convidada.</p>
+        <p className="mt-5 text-zinc-400">Preencha a ficha de inscrição. A administração analisa e entra em contato com você.</p>
+        <Link to="/inscricao" className="btn-rev inline-block px-8 py-3 mt-8 text-sm" data-testid="contact-join-button">Preencher ficha de inscrição</Link>
       </motion.div>
       <div className="grid sm:grid-cols-2 gap-4">
         <ContactItem icon={Mail} label="E-mail" value={club.contact_email} href={`mailto:${club.contact_email}`} testId="contact-email" />

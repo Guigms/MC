@@ -9,14 +9,14 @@ import { applyTheme, useClub } from "@/context/ClubContext";
 
 const TEXT = [["club_name", "Nome do club"], ["tagline", "Subtítulo (ex: Moto Club)"], ["hero_title", "Título principal"], ["city", "Cidade / base"], ["founded_year", "Ano de fundação"], ["contact_email", "E-mail de contato"], ["contact_phone", "Telefone"], ["whatsapp", "WhatsApp (com DDD)"], ["instagram", "Instagram (@usuario)"], ["hero_image", "URL da imagem de fundo"]];
 
-const resizeImage = (file) => new Promise((res) => {
+export const resizeImage = (file, max = 600, type = "image/png") => new Promise((res) => {
   const img = new Image();
   img.onload = () => {
-    const s = Math.min(1, 600 / Math.max(img.width, img.height));
+    const s = Math.min(1, max / Math.max(img.width, img.height));
     const c = document.createElement("canvas");
     c.width = img.width * s; c.height = img.height * s;
     c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-    res(c.toDataURL("image/png"));
+    res(c.toDataURL(type, 0.85));
   };
   img.src = URL.createObjectURL(file);
 });

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Gauge, Wallet, Users, CalendarDays, Palette } from "lucide-react";
+import { Gauge, Wallet, Users, CalendarDays, Palette, UserPlus, ShoppingBag } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppHeader } from "@/components/moto/AppHeader";
 import { Overview } from "@/components/admin/Overview";
@@ -7,12 +7,16 @@ import { DuesMatrix } from "@/components/admin/DuesMatrix";
 import { MembersAdmin } from "@/components/admin/MembersAdmin";
 import { EventsAdmin } from "@/components/admin/EventsAdmin";
 import { ClubSettings } from "@/components/admin/ClubSettings";
+import { ApplicationsAdmin } from "@/components/admin/ApplicationsAdmin";
+import { ProductsAdmin } from "@/components/admin/ProductsAdmin";
 
 const TABS = [
   ["overview", "Visão geral", Gauge, Overview],
+  ["applications", "Inscrições", UserPlus, ApplicationsAdmin],
   ["dues", "Mensalidades", Wallet, DuesMatrix],
   ["members", "Membros", Users, MembersAdmin],
   ["events", "Eventos", CalendarDays, EventsAdmin],
+  ["products", "Produtos", ShoppingBag, ProductsAdmin],
   ["settings", "Personalização", Palette, ClubSettings],
 ];
 

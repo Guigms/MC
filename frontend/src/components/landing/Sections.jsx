@@ -84,17 +84,17 @@ export const Gallery = () => {
   const { club } = useClub();
   const imgs = (club.gallery || []).filter(Boolean);
   if (!imgs.length) return null;
-  const spans = ["sm:col-span-2 sm:row-span-2", "", "", "sm:col-span-2", "", ""];
+
   return (
     <section id="galeria" className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
       <motion.div {...fade}>
         <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Galeria</span>
         <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Na estrada</h2>
       </motion.div>
-      <div className="mt-12 grid grid-cols-1 sm:grid-cols-4 auto-rows-[220px] gap-4">
+      <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 auto-rows-[260px] sm:auto-rows-[420px] gap-3 sm:gap-4">
         {imgs.slice(0, 6).map((src, i) => (
-          <motion.div key={src + i} {...fade} transition={{ duration: 0.6, delay: i * 0.08 }} className={`group relative overflow-hidden rounded-xl border border-white/10 ${spans[i] || ""}`} data-testid={`gallery-item-${i}`}>
-            <img src={src} alt="" className="h-full w-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
+          <motion.div key={src + i} {...fade} transition={{ duration: 0.6, delay: i * 0.08 }} className={`group relative overflow-hidden rounded-xl border border-white/10 ${i % 2 ? "lg:translate-y-10" : ""}`} data-testid={`gallery-item-${i}`}>
+            <img src={src} alt="" className="h-full w-full object-cover object-top grayscale-[60%] group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10]/80 to-transparent opacity-80 group-hover:opacity-30 transition-opacity duration-500" />
           </motion.div>
         ))}

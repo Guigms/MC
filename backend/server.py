@@ -46,10 +46,10 @@ DEFAULT_SETTINGS = {
     "instagram": "",
     "whatsapp": "",
     "gallery": [
-        "https://images.unsplash.com/photo-1783376751842-bbca196195c5?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
-        "https://images.unsplash.com/photo-1573034818970-a1e41f4d3ed3?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
-        "https://images.unsplash.com/photo-1557167638-2eef7d9a8cb9?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
-        "https://images.unsplash.com/photo-1681335056244-9dd3d5de8b60?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "/gallery/foto1.png",
+        "/gallery/foto2.png",
+        "/gallery/foto3.png",
+        "/gallery/foto4.png",
     ],
 }
 

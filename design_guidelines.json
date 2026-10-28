@@ -1,0 +1,84 @@
+{
+  "project_title": "Biker 85 Girls & Customizable Moto Club Platform",
+  "locale": "pt-BR",
+  "app_type": "hybrid_fullstack",
+  "persona_and_theme": {
+    "archetype": "Tactical Metal & Asphalt with Custom Accent Neon",
+    "theme_mode": "dark_primary_with_dynamic_css_vars",
+    "emotional_tone": "High-octane, empowering, rebellious yet organized, asphalt & chrome aesthetic with vivid pink/accent energy",
+    "customization_architecture": "Theme styling fully driven by runtime CSS custom properties (--primary-hue, --accent-hue, --primary, --accent, --club-name, --logo-url) stored in club settings and injected at :root level for easy white-label branding."
+  },
+  "typography": {
+    "font_family_heading": "'Barlow Condensed', 'Outfit', 'Bebas Neue', sans-serif",
+    "font_family_body": "'DM Sans', 'Inter', system-ui, sans-serif",
+    "hierarchy": {
+      "h1_hero": "text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-wider leading-none",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-wide",
+      "h3_card": "text-xl sm:text-2xl font-bold tracking-tight",
+      "subtitle": "text-lg text-slate-400 font-medium leading-relaxed",
+      "badge_label": "text-xs font-mono uppercase tracking-[0.2em]"
+    }
+  },
+  "color_system": {
+    "default_club": "Biker 85 Girls",
+    "css_variables_definition": {
+      "--bg-main": "#0B0C10",
+      "--bg-card": "#12141C",
+      "--bg-card-hover": "#1A1D28",
+      "--border-metal": "rgba(255, 255, 255, 0.12)",
+      "--primary": "#e85a9b",
+      "--primary-glow": "rgba(232, 90, 155, 0.35)",
+      "--accent": "#ff2a85",
+      "--text-main": "#f3f4f6",
+      "--text-muted": "#9ca3af",
+      "--status-paid": "#22c55e",
+      "--status-unpaid": "#ef4444"
+    },
+    "guidelines": "Never use pure #000000. Use rich asphalt charcoal (#0B0C10) tint with metallic borders and glowing neon accents. Text must maintain minimum 4.5:1 contrast against dark surfaces."
+  },
+  "visual_enhancers": {
+    "motoclub_effects": [
+      "Metallic exhaust pipe glow lines on hover",
+      "Speedometer-style percentage meters for dues and event attendances",
+      "Leather grain/asphalt texture overlays with subtle SVG noise",
+      "Piston/Gear micro-animations using Framer Motion",
+      "Tire tread pattern borders for card dividers"
+    ],
+    "surface_styles": "Glassmorphism with heavy backdrop blur (backdrop-blur-md bg-zinc-950/80 border border-white/10 shadow-2xl)"
+  },
+  "page_layouts": {
+    "public_landing": {
+      "header": "Sticky translucent navbar with club logo, nav links (Sobre, Encontros & Eventos, Galeria, Contato), and 'Área do Membro' CTA button",
+      "hero": "Bold hero section with Biker 85 Girls custom chopper artwork, animated heading, quick stats (Membros Ativas, Quilômetros Rodados, Eventos do Ano), and 'Junte-se ao Moto Club' action",
+      "events_preview": "Grid showing upcoming public rallies with location, date badge, and 'Exclusivo para Membros' teaser tags",
+      "gallery": "Bento-style visual gallery of motorcycle trips, rallies, and club patches",
+      "footer": "Dark high-contrast footer with club logo, social links, terms, and admin portal access"
+    },
+    "member_area": {
+      "header": "Member navigation bar with active member badge, profile shortcut, dues status indicator",
+      "dashboard_grid": "Personal summary cards: Next Event RSVP, Monthly Dues Status (R$ 30,00/mês), Member ID Card (Digital Badge with QR code mock), Recent Encontros Feed",
+      "events_list": "Detailed events schedule with GPS map link placeholder, route info, roll-call list, and RSVP toggle ('Vou / Não Vou')"
+    },
+    "admin_dashboard": {
+      "navigation": "Sidebar or Topbar tabs: Visão Geral (Stats), Controle de Mensalidades (Grid de Pagamentos Jan-Dez), Gestão de Membros, Gestão de Eventos, Personalização do Club",
+      "dues_matrix": "Interactive monthly dues table showing members vs 12 months, color-coded badges (Pago em verde, Pendente em vermelho), manual toggle switch for admin to mark payment",
+      "customization_page": "Live preview club editor allowing admins to update Club Name, Logo URL, Primary Accent Color picker, Hero Title, and Monthly Fee (default R$ 30,00)"
+    }
+  },
+  "component_guidelines": {
+    "file_type": "JavaScript (.js and .jsx files)",
+    "shadcn_primitives": "Customized Radix / Shadcn components (Dialog, Tabs, Select, Switch, Table, Badge, DropdownMenu, Toast via Sonner)",
+    "forms_and_inputs": "Styled dark inputs with explicit focus rings, neon hover outlines, and data-testid attributes on all buttons/inputs",
+    "animations": "Framer Motion staggered entrance for grid items, smooth modal transitions, tab switches"
+  },
+  "image_assets": {
+    "hero_chopper": "https://images.unsplash.com/photo-1681335056244-9dd3d5de8b60?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHw0fHxjaG9wcGVyJTIwbW90b3JjeWNsZSUyMGJpa2VyJTIwZGFyayUyMGFlc3RoZXRpY3xlbnwwfHx8fDE3OTMyMDE0Nzl8MA&ixlib=rb-4.1.0&q=85",
+    "biker_rally_night": "https://images.unsplash.com/photo-1783376751842-bbca196195c5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwyfHxiaWtlciUyMHJhbGx5JTIwbW90b3JjeWNsZSUyMGV2ZW50JTIwbmlnaHR8ZW58MHx8fHwxNzkzMjAxNDc5fDA&ixlib=rb-4.1.0&q=85",
+    "motorcycle_detail": "https://images.unsplash.com/photo-1573034818970-a1e41f4d3ed3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwxfHxjaG9wcGVyJTIwbW90b3JjeWNsZSUyMGJpa2VyJTIwZGFyayUyMGFlc3RoZXRpY3xlbnwwfHx8fDE3OTMyMDE0Nzl8MA&ixlib=rb-4.1.0&q=85",
+    "cruisers": "https://images.unsplash.com/photo-1557167638-2eef7d9a8cb9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwzfHxiaWtlciUyMHJhbGx5JTIwbW90b3JjeWNsZSUyMGV2ZW50JTIwbmlnaHR8ZW58MHx8fHwxNzkzMjAxNDc5fDA&ixlib=rb-4.1.0&q=85"
+  },
+  "testing_requirements": {
+    "data_testid_convention": "All interactive elements, buttons, form inputs, status indicators, and tabs MUST include role-based data-testid (e.g., data-testid='login-submit-button', data-testid='dues-table-member-row', data-testid='admin-mark-paid-button')",
+    "language": "Portuguese (pt-BR) text content throughout all pages"
+  }
+}

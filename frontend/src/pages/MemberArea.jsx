@@ -19,12 +19,12 @@ export default function MemberArea() {
           <h1 className="font-display text-4xl sm:text-5xl font-black uppercase mt-2 leading-none" data-testid="member-welcome">E aí, {user.nickname || user.name.split(" ")[0]}!</h1>
         </motion.div>
         <div className="mt-10 grid lg:grid-cols-[380px_1fr] gap-8">
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <MemberCard user={user} />
             <MyDues />
           </div>
-          <Tabs defaultValue="eventos">
-            <TabsList className="bg-white/5">
+          <Tabs defaultValue="eventos" className="min-w-0">
+            <TabsList className="bg-white/5 h-auto flex-wrap justify-start">
               <TabsTrigger value="eventos" data-testid="member-tab-events">Eventos & Encontros</TabsTrigger>
               <TabsTrigger value="produtos" data-testid="member-tab-products">Produtos do club</TabsTrigger>
               <TabsTrigger value="perfil" data-testid="member-tab-profile">Meu perfil</TabsTrigger>

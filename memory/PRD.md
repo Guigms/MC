@@ -21,6 +21,11 @@ Admin do club; Membro (piloto).
 - Admin: visão geral, matriz de mensalidades (12 meses, clique p/ pago/pendente), CRUD de membros (perfil admin/membro, ativo/inativo), CRUD de eventos/encontros com lista de confirmados, Personalização (nome, logo upload/URL, cores, textos, mensalidade, contatos, galeria) com prévia ao vivo
 - Admin excluído das contagens de mensalidade/membros
 
+## Implemented (2026-10-28, iteração 2)
+- Ficha de inscrição pública /inscricao (dados básicos + tipo sanguíneo, moto, estilo, motivo, compromisso); admin aprova (cria conta + senha provisória) ou recusa
+- Produtos do club: admin publica (foto, preço, tamanhos, prazo); membros respondem quero/não, tamanho, quantidade; admin vê totais por tamanho
+- Correções: prazo validado no servidor, respostas removidas ao excluir membro, aprovação dupla protegida, layout mobile da área do membro
+
 ## Backlog
 - P1: recuperação de senha por e-mail; datas com seletor pt-BR
 - P2: exportar relatório de mensalidades (PDF/Excel); lembrete de mensalidade; fotos por evento; multi-club (vários clubs numa instância)

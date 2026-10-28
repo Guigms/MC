@@ -38,7 +38,7 @@ const Detail = ({ a, onClose, onDone }) => {
         <DialogHeader><DialogTitle className="font-display text-3xl uppercase">{a.name}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Row k="E-mail" v={a.email} /><Row k="WhatsApp" v={a.whatsapp} /><Row k="Instagram" v={a.instagram} />
-          <Row k="Idade" v={a.age} /><Row k="Altura" v={a.height} /><Row k="Cidade" v={a.city} />
+          <Row k="Idade" v={a.age} /><Row k="Altura" v={a.height} /><Row k="Tipo sanguíneo" v={a.blood_type} /><Row k="Cidade" v={a.city} />
           <Row k="Profissão" v={a.profession} /><Row k="Moto própria" v={yn(a.has_motorcycle)} /><Row k="Modelo" v={a.motorcycle_model} />
           <Row k="Pilota há" v={a.riding_since} /><Row k="Frequência" v={a.frequency} /><Row k="Outro grupo" v={yn(a.other_group)} />
           <Row k="Prefere" v={styles} /><Row k="Participa de eventos" v={yn(a.commit_events)} /><Row k="CNH A válida" v={yn(a.has_cnh_a)} />
@@ -94,7 +94,7 @@ export const ApplicationsAdmin = () => {
       <div className="grid md:grid-cols-2 gap-4">
         {shown.length === 0 && <p className="text-zinc-500 text-sm" data-testid="applications-empty">Nenhuma inscrição aqui.</p>}
         {shown.map((a) => {
-          const [label, cls] = STATUS[a.status];
+          const [label, cls] = STATUS[a.status] || STATUS.pending;
           return (
             <div key={a.id} className="card-metal hoverable p-5 cursor-pointer" onClick={() => setOpen(a)} data-testid={`application-card-${a.id}`}>
               <div className="flex items-start justify-between gap-3">

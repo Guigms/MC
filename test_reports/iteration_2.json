@@ -1,0 +1,43 @@
+{
+  "summary": "Tested new Inscrições (applications) and Produtos do club features end-to-end (API + UI desktop + mobile 390px) plus regression of iteration-1 suite. Backend 30/31 pass (only failure: deadline not enforced server-side). UI: join form (hero/contact links, yes/no validation, styles, success, duplicate error), admin approve -> temp password -> new member login lands on /membro, reject with note -> Recusadas, delete, product create (image upload)/edit/hidden/expired, member size/qty/Quero/Não quero, Ver respostas totals by size - all working. One mobile layout bug: member area horizontal overflow at 390px.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/products/{pid}/response", "issue": "Deadline not enforced server-side: member can still respond via API to a product whose deadline is past (UI only hides buttons). Add check: if p.deadline and p.deadline < today -> 400 'Prazo encerrado'."},
+      {"endpoint": "DELETE /api/members/{mid}", "issue": "Does not delete the member's product_orders -> orphaned responses still counted in product totals (shown as '—' name). Add db.product_orders.delete_many({'user_id': mid})."},
+      {"endpoint": "POST /api/applications/{aid}/approve", "issue": "Concurrent double approve could raise DuplicateKeyError (500) on users.email unique index; use conditional update_one({_id, status:'pending'}) first or catch DuplicateKeyError."},
+      {"endpoint": "ProductIn.deadline / RejectIn.note", "issue": "No format validation for deadline (YYYY-MM-DD) and no max_length on reject note."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MemberArea (mobile 390px)", "issue": "Horizontal overflow: document scrollWidth=410 at 390px viewport. Root cause: TabsList (3 whitespace-nowrap tabs: Eventos & Encontros / Produtos do club / Meu perfil) is inline-flex ~400px wide and expands the single grid column (grid items min-width:auto), so member-id-card and member-dues-panel also overflow to 410px. Fix: add min-w-0 to grid children and make TabsList 'w-full overflow-x-auto' or 'flex-wrap h-auto', or shorten labels on mobile.", "selector": "[data-testid='member-area-page'] TabsList / [data-testid='member-tab-profile']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Produtos dialog", "issues": ["Deadline uses native <input type='date'> browser picker instead of shadcn Calendar/Popover"]},
+      {"screen": "Admin Produtos grid", "issues": ["Products without image show a large empty dark box; member view shows a ShoppingBag placeholder — use same placeholder in admin card"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_applications_products.py", "/app/backend/tests/test_moto_club_api.py", "/app/test_reports/pytest/pytest_results_iter2.xml"],
+  "action_items": [
+    "Fix member area horizontal overflow at 390px (TabsList width / grid min-w-0)",
+    "Enforce product deadline in POST /api/products/{pid}/response",
+    "Delete product_orders when a member is deleted",
+    "Optional: guard approve against race (conditional update / catch DuplicateKeyError); validate deadline format; replace native date input with shadcn calendar"
+  ],
+  "critical_code_review_comments": [
+    "respond_product trusts UI for deadline; business rule must live on backend",
+    "delete_member leaves orphan product_orders (and approved application keeps user_id pointing to deleted user - acceptable)",
+    "ProductsList filters p.active client-side - redundant for members (backend already filters) but hides inactive products from admin when admin visits /membro; fine",
+    "ResponsesDialog table rows keyed by email; orphaned rows have empty email -> duplicate React keys possible"
+  ],
+  "updated_files": ["/app/backend/tests/test_applications_products.py"],
+  "success_rate": {"backend": "97% (30/31)", "frontend": "95% (all flows pass; 1 mobile overflow bug)"},
+  "test_credentials": "Admin gms1@gmsolutionti.com.br / Biker85@Admin (from /app/memory/test_credentials.md). Not locked.",
+  "seed_data_creation": "All TEST_ applications, members, products and product_orders deleted after testing (verified counts 0).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_applications_products.py covers applications RBAC/validation/duplicate/approve/reject/reapply/delete and products CRUD/hidden/responses/by_size; test_expired_deadline_response_backend currently fails by design until backend enforces deadline. Run with REACT_APP_BACKEND_URL exported. Playbook checks: bcrypt $2b$ OK, httpOnly cookie OK, CORS rejects unknown origin OK.",
+  "rca of the issue": "Mobile overflow: Radix TabsList renders inline-flex with nowrap triggers; inside a CSS grid with a single implicit column, grid items default to min-width:auto so the column grows to the intrinsic width of the TabsList (~400px) exceeding the 390px viewport (minus padding) -> whole left column (card, dues) also widens to 410px."
+}

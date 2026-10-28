@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Upload, ClipboardList } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ClipboardList, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -134,8 +134,8 @@ export const ProductsAdmin = () => {
         {list.length === 0 && <p className="text-zinc-500 text-sm" data-testid="products-empty">Nenhum produto cadastrado.</p>}
         {list.map((p) => (
           <div key={p.id} className="card-metal hoverable overflow-hidden flex flex-col" data-testid={`admin-product-${p.id}`}>
-            <div className="aspect-[4/3] bg-black/40 relative">
-              {p.image_url && <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />}
+            <div className="aspect-[4/3] bg-black/40 relative flex items-center justify-center">
+              {p.image_url ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" /> : <ShoppingBag className="text-zinc-600" size={40} />}
               {!p.active && <span className="absolute top-3 left-3 text-[11px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full">Oculto</span>}
             </div>
             <div className="p-5 flex-1 flex flex-col">

@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, errMsg } from "@/lib/api";
 import { useClub } from "@/context/ClubContext";
 
+export const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 export const STYLES = [["passeios_longos", "Passeios longos"], ["trilhas", "Trilhas"], ["estrada", "Estrada"], ["encontros_urbanos", "Encontros urbanos"]];
 
 const EMPTY = {
-  name: "", email: "", whatsapp: "", age: "", height: "", city: "", profession: "", instagram: "",
+  name: "", email: "", whatsapp: "", age: "", height: "", blood_type: "", city: "", profession: "", instagram: "",
   has_motorcycle: null, motorcycle_model: "", riding_since: "", styles: [], frequency: "",
   other_group: null, reason: "", commit_events: null, has_cnh_a: null,
 };
@@ -98,6 +100,15 @@ export default function Join() {
               <Field label="WhatsApp" k="whatsapp" f={f} setF={setF} req />
               <Field label="Idade" k="age" type="number" f={f} setF={setF} />
               <Field label="Altura" k="height" f={f} setF={setF} />
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label>Tipo sanguíneo</Label>
+                <div className="flex flex-wrap gap-2">
+                  {BLOOD_TYPES.map((t) => (
+                    <button type="button" key={t} onClick={() => setF({ ...f, blood_type: f.blood_type === t ? "" : t })} data-testid={`join-blood-${t}`}
+                      className={`min-w-12 px-3 py-1.5 text-sm font-semibold ${f.blood_type === t ? "btn-rev" : "btn-ghost-metal"}`}>{t}</button>
+                  ))}
+                </div>
+              </div>
               <Field label="Cidade onde mora" k="city" f={f} setF={setF} req />
               <Field label="Profissão" k="profession" f={f} setF={setF} />
               <Field label="Instagram" k="instagram" f={f} setF={setF} full />

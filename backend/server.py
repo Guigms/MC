@@ -15,6 +15,7 @@ import jwt
 from bson import ObjectId
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import DuplicateKeyError
 from typing import Literal
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.cors import CORSMiddleware
@@ -322,6 +323,7 @@ async def delete_member(mid: str, admin: dict = Depends(admin_user)):
     await db.users.delete_one({"_id": oid(mid)})
     await db.payments.delete_many({"user_id": mid})
     await db.events.update_many({}, {"$pull": {"rsvps": mid}})
+    await db.product_orders.delete_many({"user_id": mid})
     return {"ok": True}
 
 
@@ -439,6 +441,7 @@ class ApplicationIn(BaseModel):
     whatsapp: str = Field(min_length=8, max_length=30)
     age: Optional[int] = Field(default=None, ge=14, le=100)
     height: Optional[str] = Field(default="", max_length=20)
+    blood_type: Literal["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] = ""
     city: str = Field(min_length=2, max_length=120)
     profession: Optional[str] = Field(default="", max_length=120)
     instagram: Optional[str] = Field(default="", max_length=80)
@@ -454,7 +457,7 @@ class ApplicationIn(BaseModel):
 
 
 class RejectIn(BaseModel):
-    note: Optional[str] = ""
+    note: Optional[str] = Field(default="", max_length=1000)
 
 
 @api.post("/applications")
@@ -481,16 +484,21 @@ async def approve_application(aid: str, admin: dict = Depends(admin_user)):
     app_doc = await db.applications.find_one({"_id": oid(aid)})
     if not app_doc:
         raise HTTPException(404, "Inscrição não encontrada")
-    if app_doc["status"] != "pending":
-        raise HTTPException(400, "Esta inscrição já foi analisada")
     if await db.users.find_one({"email": app_doc["email"]}):
         raise HTTPException(400, "Já existe um membro com este e-mail")
+    lock = await db.applications.update_one({"_id": app_doc["_id"], "status": "pending"}, {"$set": {"status": "approving"}})
+    if not lock.modified_count:
+        raise HTTPException(400, "Esta inscrição já foi analisada")
     temp = secrets.token_urlsafe(6)
-    res = await db.users.insert_one({
+    try:
+        res = await db.users.insert_one({
         "email": app_doc["email"], "password_hash": hash_password(temp), "name": app_doc["name"],
         "role": "member", "active": True, "nickname": "", "phone": app_doc.get("whatsapp", ""),
-        "motorcycle": app_doc.get("motorcycle_model", ""), "blood_type": "", "birth_date": "", "joined_at": now(),
-    })
+        "motorcycle": app_doc.get("motorcycle_model", ""), "blood_type": app_doc.get("blood_type", ""), "birth_date": "", "joined_at": now(),
+        })
+    except DuplicateKeyError:
+        await db.applications.update_one({"_id": app_doc["_id"]}, {"$set": {"status": "pending"}})
+        raise HTTPException(400, "Já existe um membro com este e-mail")
     await db.applications.update_one({"_id": app_doc["_id"]}, {"$set": {
         "status": "approved", "reviewed_by": admin["name"], "reviewed_at": now(), "user_id": str(res.inserted_id)}})
     return {"ok": True, "email": app_doc["email"], "temp_password": temp}
@@ -520,7 +528,7 @@ class ProductIn(BaseModel):
     image_url: str = ""
     price: float = Field(default=0, ge=0)
     sizes: List[str] = []
-    deadline: str = ""
+    deadline: str = Field(default="", pattern=r"^(\d{4}-\d{2}-\d{2})?$")
     active: bool = True
 
 
@@ -577,6 +585,8 @@ async def respond_product(pid: str, body: ProductResponseIn, user: dict = Depend
     p = await db.products.find_one({"_id": oid(pid)})
     if not p or (not p.get("active") and user["role"] != "admin"):
         raise HTTPException(404, "Produto não encontrado")
+    if p.get("deadline") and p["deadline"] < now().strftime("%Y-%m-%d"):
+        raise HTTPException(400, "Prazo encerrado")
     if body.want:
         if p.get("sizes") and body.size not in p["sizes"]:
             raise HTTPException(400, "Escolha um tamanho válido")

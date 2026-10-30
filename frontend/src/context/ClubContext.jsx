@@ -3,6 +3,26 @@ import { api } from "@/lib/api";
 
 const ClubCtx = createContext(null);
 
+const DEFAULT_CLUB = {
+  club_name: "Biker 85 Girls",
+  tagline: "Moto Club",
+  hero_title: "Mulheres, motores e estrada sem fim",
+  hero_subtitle: "Um moto club feito de irmandade, liberdade e quilômetros compartilhados.",
+  about_text: "Somos um moto club que vive a estrada juntas. Encontros, viagens, eventos beneficentes e muita parceria sobre duas rodas.",
+  logo_url: "/logo.png",
+  hero_image: "https://images.unsplash.com/photo-1681335056244-9dd3d5de8b60?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+  primary_color: "#e85a9b",
+  accent_color: "#ff2a85",
+  monthly_fee: 30,
+  city: "[Sua cidade]",
+  founded_year: "[Ano de fundação]",
+  contact_email: "[contato@seuclub.com]",
+  contact_phone: "[(00) 00000-0000]",
+  instagram: "",
+  whatsapp: "",
+  gallery: ["/gallery/foto1.png", "/gallery/foto2.png", "/gallery/foto3.png", "/gallery/foto4.png"],
+};
+
 const hexToRgb = (hex) => {
   const h = (hex || "#e85a9b").replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
@@ -38,7 +58,13 @@ export const ClubProvider = ({ children }) => {
   const [club, setClub] = useState(null);
 
   const reload = useCallback(async () => {
-    const { data } = await api.get("/settings");
+    let data;
+    try {
+      ({ data } = await api.get("/settings"));
+    } catch (error) {
+      console.error("Não foi possível carregar as configurações do clube pela API.", error);
+      data = DEFAULT_CLUB;
+    }
     setClub(data);
     applyTheme(data);
   }, []);

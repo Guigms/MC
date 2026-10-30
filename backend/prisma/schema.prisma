@@ -43,10 +43,10 @@ model ClubSettings {
   clubName     String  @default("Biker 85 Girls") @map("club_name") @db.VarChar(160)
   tagline      String  @default("Moto Club") @db.VarChar(255)
   heroTitle    String  @default("Mulheres, motores e estrada sem fim") @map("hero_title") @db.VarChar(255)
-  heroSubtitle String  @default("") @map("hero_subtitle") @db.Text
-  aboutText    String  @default("") @map("about_text") @db.Text
-  logoUrl      String  @default("/logo.png") @map("logo_url") @db.Text
-  heroImage    String  @default("") @map("hero_image") @db.Text
+  heroSubtitle String  @map("hero_subtitle") @db.Text
+  aboutText    String  @map("about_text") @db.Text
+  logoUrl      String  @map("logo_url") @db.MediumText
+  heroImage    String  @map("hero_image") @db.Text
   primaryColor String  @default("#e85a9b") @map("primary_color") @db.VarChar(20)
   accentColor  String  @default("#ff2a85") @map("accent_color") @db.VarChar(20)
   monthlyFee   Decimal @default(30.00) @map("monthly_fee") @db.Decimal(10, 2)
@@ -67,8 +67,8 @@ model Event {
   type        String      @default("evento") @db.VarChar(30)
   date        String      @db.VarChar(30)
   location    String      @default("") @db.VarChar(255)
-  description String      @default("") @db.Text
-  imageUrl    String      @default("") @map("image_url") @db.Text
+  description String      @db.Text
+  imageUrl    String      @map("image_url") @db.MediumText
   createdBy   String      @default("") @map("created_by") @db.VarChar(120)
   createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(3)
   rsvps       EventRsvp[]
@@ -125,7 +125,7 @@ model Application {
   commitEvents    Boolean   @default(false) @map("commit_events")
   hasCnhA         Boolean   @default(false) @map("has_cnh_a")
   status          String    @default("pending") @db.VarChar(20)
-  note            String    @default("") @db.Text
+  note            String    @db.Text
   reviewedBy      String    @default("") @map("reviewed_by") @db.VarChar(120)
   reviewedAt      DateTime? @map("reviewed_at") @db.DateTime(3)
   userId          String?   @unique @map("user_id") @db.VarChar(191)
@@ -140,8 +140,8 @@ model Application {
 model Product {
   id          String         @id @default(cuid()) @db.VarChar(191)
   name        String         @db.VarChar(120)
-  description String         @default("") @db.Text
-  imageUrl    String         @default("") @map("image_url") @db.Text
+  description String         @db.Text
+  imageUrl    String         @map("image_url") @db.MediumText
   price       Decimal        @default(0.00) @db.Decimal(10, 2)
   sizes       Json
   deadline    String         @default("") @db.VarChar(10)

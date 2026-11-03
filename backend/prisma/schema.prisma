@@ -124,6 +124,14 @@ model Application {
   reason          String    @db.Text
   commitEvents    Boolean   @default(false) @map("commit_events")
   hasCnhA         Boolean   @default(false) @map("has_cnh_a")
+  hasMedicationAllergy Boolean @default(false) @map("has_medication_allergy")
+  medicationAllergyDetails String @default("") @map("medication_allergy_details") @db.VarChar(1000)
+  emergencyContact1Name String @default("") @map("emergency_contact_1_name") @db.VarChar(120)
+  emergencyContact1Phone String @default("") @map("emergency_contact_1_phone") @db.VarChar(30)
+  emergencyContact1Relationship String @default("") @map("emergency_contact_1_relationship") @db.VarChar(80)
+  emergencyContact2Name String @default("") @map("emergency_contact_2_name") @db.VarChar(120)
+  emergencyContact2Phone String @default("") @map("emergency_contact_2_phone") @db.VarChar(30)
+  emergencyContact2Relationship String @default("") @map("emergency_contact_2_relationship") @db.VarChar(80)
   status          String    @default("pending") @db.VarChar(20)
   note            String    @db.Text
   reviewedBy      String    @default("") @map("reviewed_by") @db.VarChar(120)

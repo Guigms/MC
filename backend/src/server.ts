@@ -181,10 +181,6 @@ const notifyMembersOfNewEvent = async (event: {
   }
 };
 
-// ==========================================
-// CONFIGURAÇÕES GERAIS
-// ==========================================
-
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -200,16 +196,12 @@ app.use(express.json({ limit: "12mb" }));
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-app.use((req: Request, _res: Response, next) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(
     `[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`
   );
   next();
 });
-
-// ==========================================
-// ROTAS GERAIS E HEALTHCHECK
-// ==========================================
 
 app.get("/", (_req: Request, res: Response) => {
   return res.json({
@@ -235,11 +227,6 @@ app.get("/api/health", async (_req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// 1. AUTENTICAÇÃO E USUÁRIOS
-// ==========================================
-
-// POST /api/auth/login
 app.post("/api/auth/login", async (req: Request, res: Response) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
@@ -267,7 +254,6 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Verifica senha criptografada.
     let passwordValid = false;
 
     if (user.passwordHash.startsWith("$2")) {
@@ -276,10 +262,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
         user.passwordHash
       );
     } else if (user.passwordHash === password) {
-      // Compatibilidade com contas antigas em texto puro.
       passwordValid = true;
-
-      // Atualiza a senha antiga para hash.
       const newHash = await bcrypt.hash(password, 12);
 
       await prisma.user.update({
@@ -309,14 +292,12 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/auth/logout
 app.post("/api/auth/logout", (_req: Request, res: Response) => {
   return res.json({
     message: "Sessão encerrada.",
   });
 });
 
-// GET /api/auth/me
 app.get("/api/auth/me", async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
 
@@ -351,11 +332,6 @@ app.get("/api/auth/me", async (req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// 2. PAINEL E DASHBOARD DO CLUBE
-// ==========================================
-
-// GET /api/settings/hero-image
 app.get("/api/settings/hero-image", async (_req: Request, res: Response) => {
   try {
     const settings = await prisma.clubSettings.findUnique({
@@ -373,7 +349,6 @@ app.get("/api/settings/hero-image", async (_req: Request, res: Response) => {
   }
 });
 
-// PUT /api/settings/hero-image
 app.put("/api/settings/hero-image", requireAdmin, async (req: Request, res: Response) => {
   const heroImage = req.body?.hero_image;
 
@@ -459,7 +434,7 @@ app.put("/api/settings/gallery", requireAdmin, async (req: Request, res: Respons
     !Array.isArray(gallery) ||
     gallery.length > 20 ||
     gallery.some(
-      (item) =>
+      (item: any) =>
         typeof item !== "string" ||
         item.trim().length === 0 ||
         item.trim().length > 2048
@@ -471,7 +446,7 @@ app.put("/api/settings/gallery", requireAdmin, async (req: Request, res: Respons
   }
 
   const mediaUrls = gallery.map((item: string) => item.trim());
-  const validMediaUrls = mediaUrls.every((item) => {
+  const validMediaUrls = mediaUrls.every((item: string) => {
     if (/^\/(?!\/)/.test(item)) return true;
 
     try {
@@ -517,7 +492,6 @@ app.put("/api/settings/gallery", requireAdmin, async (req: Request, res: Respons
   }
 });
 
-// GET /api/settings
 const defaultClubSettings = {
   id: "club",
   clubName: "Biker Girls 85",
@@ -667,7 +641,7 @@ app.put("/api/settings", requireAdmin, async (req: Request, res: Response) => {
     instagram === null || whatsapp === null ||
     !Number.isFinite(monthlyFee) || monthlyFee < 0 ||
     !Array.isArray(gallery) || gallery.length > 20 ||
-    gallery.some((item) => !validGallery(item) || item.trim().length > 2048)
+    gallery.some((item: any) => !validGallery(item) || item.trim().length > 2048)
   ) {
     return res.status(400).json({
       message: "Revise os dados de personalização e tente novamente.",
@@ -689,13 +663,13 @@ app.put("/api/settings", requireAdmin, async (req: Request, res: Response) => {
       update: {
         clubName, tagline, heroTitle, heroSubtitle, aboutText, logoUrl, heroImage,
         primaryColor, accentColor, monthlyFee, city, contactEmail, contactPhone,
-        instagram, whatsapp, gallery: gallery.map((item: string) => item.trim()),
+        instagram, whatsapp, gallery: gallery.map((item: any) => item.trim()),
       },
       create: {
         ...defaultClubSettings,
         clubName, tagline, heroTitle, heroSubtitle, aboutText, logoUrl, heroImage,
         primaryColor, accentColor, monthlyFee, city, contactEmail, contactPhone,
-        instagram, whatsapp, gallery: gallery.map((item: string) => item.trim()),
+        instagram, whatsapp, gallery: gallery.map((item: any) => item.trim()),
       },
     });
 
@@ -709,7 +683,6 @@ app.put("/api/settings", requireAdmin, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/public/stats
 app.get("/api/public/stats", async (_req: Request, res: Response) => {
   try {
     const membersCount = await prisma.user.count({
@@ -732,8 +705,6 @@ app.get("/api/public/stats", async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/users e /api/members
-// Não retorna passwordHash.
 const getUsersHandler = async (_req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -928,7 +899,6 @@ app.delete(
   }
 );
 
-// GET /api/admin/overview
 const isMembershipMonthEligible = (
   joinedAt: Date,
   year: number,
@@ -1004,10 +974,6 @@ app.get("/api/admin/overview", async (_req: Request, res: Response) => {
     });
   }
 });
-
-// ==========================================
-// 3. MENSALIDADES
-// ==========================================
 
 const getDuesHandler = async (req: Request, res: Response) => {
   const year = Number(req.query.year);
@@ -1144,12 +1110,6 @@ app.post("/api/dues/toggle", async (req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// 4. INSCRIÇÕES - APPLICATIONS
-// ==========================================
-
-// POST /api/applications
-// Recebe e salva uma nova inscrição.
 app.post("/api/applications", async (req: Request, res: Response) => {
   try {
     const {
@@ -1246,10 +1206,6 @@ app.post("/api/applications", async (req: Request, res: Response) => {
       },
     });
 
-    console.log(
-      `[Inscrição] Cadastro realizado: ${application.id} \n ${application.name}`
-    );
-
     return res.status(201).json({
       message: "Inscrição enviada com sucesso!",
       application,
@@ -1263,7 +1219,6 @@ app.post("/api/applications", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/applications
 app.get("/api/applications", async (_req: Request, res: Response) => {
   try {
     const applications = await prisma.application.findMany({
@@ -1282,7 +1237,6 @@ app.get("/api/applications", async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/admin/applications
 app.get(
   "/api/admin/applications",
   async (_req: Request, res: Response) => {
@@ -1304,8 +1258,6 @@ app.get(
   }
 );
 
-// POST /api/applications/:id/approve
-// Cria o usuário e aprova a inscrição em uma transação.
 app.post(
   "/api/applications/:id/approve",
   async (req: Request, res: Response) => {
@@ -1341,7 +1293,6 @@ app.post(
         });
       }
 
-      // Senha aleatória, exibida somente nesta resposta.
       const tempPassword = randomBytes(9).toString("base64url");
       const passwordHash = await bcrypt.hash(tempPassword, 12);
 
@@ -1360,7 +1311,6 @@ app.post(
           },
         });
 
-        // Atualiza somente se ainda estiver pendente.
         const updatedCount = await tx.application.updateMany({
           where: {
             id,
@@ -1382,10 +1332,6 @@ app.post(
 
         return user;
       });
-
-      console.log(
-        `[Admin] Inscrição aprovada: ${application.name} \n ${result.email}`
-      );
 
       return res.status(200).json({
         message: "Inscrição aprovada e conta criada com sucesso.",
@@ -1411,7 +1357,6 @@ app.post(
   }
 );
 
-// POST /api/applications/:id/reject
 app.post(
   "/api/applications/:id/reject",
   async (req: Request, res: Response) => {
@@ -1467,7 +1412,6 @@ app.post(
   }
 );
 
-// DELETE /api/applications/:id
 app.delete(
   "/api/applications/:id",
   async (req: Request, res: Response) => {
@@ -1484,8 +1428,6 @@ app.delete(
         });
       }
 
-      // Não exclui inscrição aprovada para evitar desvincular
-      // o histórico da conta de membro criada.
       if (application.status === "approved") {
         return res.status(409).json({
           message:
@@ -1510,10 +1452,6 @@ app.delete(
   }
 );
 
-// ==========================================
-// 5. EVENTOS
-// ==========================================
-
 const eventToResponse = (event: {
   id: string;
   title: string;
@@ -1536,14 +1474,14 @@ const eventToResponse = (event: {
   description: event.description,
   image_url: event.imageUrl,
   created_by: event.createdBy,
-  rsvps: event.rsvps.map(({ userId: rsvpUserId }) => rsvpUserId),
-  attendees: event.rsvps.map(({ userId: rsvpUserId, user }) => ({
+  rsvps: event.rsvps.map(({ userId: rsvpUserId }: { userId: string }) => rsvpUserId),
+  attendees: event.rsvps.map(({ userId: rsvpUserId, user }: { userId: string; user: { name: string; nickname: string; email: string } }) => ({
     id: rsvpUserId,
     name: user.nickname || user.name,
     email: user.email,
   })),
   rsvp_count: event.rsvps.length,
-  going: Boolean(userId && event.rsvps.some(({ userId: rsvpUserId }) => rsvpUserId === userId)),
+  going: Boolean(userId && event.rsvps.some(({ userId: rsvpUserId }: { userId: string }) => rsvpUserId === userId)),
 });
 
 const getEvents = async (req: Request, res: Response) => {
@@ -1561,7 +1499,7 @@ const getEvents = async (req: Request, res: Response) => {
       orderBy: [{ date: "asc" }, { createdAt: "desc" }],
     });
 
-    return res.json(events.map((event) => eventToResponse(event, userId)));
+    return res.json(events.map((event: any) => eventToResponse(event, userId)));
   } catch (error) {
     console.error("[Events] Erro ao carregar eventos:", error);
 
@@ -1727,10 +1665,6 @@ app.post("/api/events/:id/rsvp", async (req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// 6. PRODUTOS
-// ==========================================
-
 const productToResponse = (product: {
   id: string;
   name: string;
@@ -1773,7 +1707,7 @@ const getProducts = async (req: Request, res: Response, includeInactive = false)
       orderBy: { createdAt: "desc" },
     });
 
-    return res.json(products.map(productToResponse));
+    return res.json(products.map((product: any) => productToResponse(product)));
   } catch (error) {
     console.error("[Products] Erro ao carregar produtos:", error);
     return res.status(500).json({ message: "Não foi possível carregar os produtos." });
@@ -1806,8 +1740,8 @@ const productFields = (body: Record<string, unknown>) => {
     imageUrl.length > 5_000_000 || !validImage ||
     !Number.isFinite(price) || price < 0 || price > 99_999_999 ||
     !Array.isArray(sizes) || sizes.length > 30 ||
-    sizes.some((size) => typeof size !== "string" || !size.trim() || size.trim().length > 40) ||
-    new Set(sizes.map((size) => typeof size === "string" ? size.trim().toLowerCase() : "")).size !== sizes.length ||
+    sizes.some((size: any) => typeof size !== "string" || !size.trim() || size.trim().length > 40) ||
+    new Set(sizes.map((size: any) => typeof size === "string" ? size.trim().toLowerCase() : "")).size !== sizes.length ||
     (deadline !== "" && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) ||
     typeof active !== "boolean"
   ) {
@@ -1926,22 +1860,22 @@ app.get("/api/products/:id/responses", requireAdmin, async (req: Request, res: R
     });
     if (!product) return res.status(404).json({ message: "Produto não encontrado." });
 
-    const items = product.orders.map((order) => ({
+    const items = product.orders.map((order: any) => ({
       name: order.user.nickname || order.user.name,
       email: order.user.email,
       want: order.want,
       size: order.size,
       quantity: order.quantity,
     }));
-    const by_size = items.reduce<Record<string, number>>((acc, item) => {
+    const by_size = items.reduce<Record<string, number>>((acc: Record<string, number>, item: any) => {
       if (item.want && item.size) acc[item.size] = (acc[item.size] ?? 0) + item.quantity;
       return acc;
     }, {});
 
     return res.json({
-      yes: items.filter((item) => item.want).length,
-      no: items.filter((item) => !item.want).length,
-      total: items.reduce((sum, item) => sum + (item.want ? item.quantity : 0), 0),
+      yes: items.filter((item: any) => item.want).length,
+      no: items.filter((item: any) => !item.want).length,
+      total: items.reduce((sum: number, item: any) => sum + (item.want ? item.quantity : 0), 0),
       by_size,
       items,
     });
@@ -1951,25 +1885,16 @@ app.get("/api/products/:id/responses", requireAdmin, async (req: Request, res: R
   }
 });
 
-// ==========================================
-// SALVAGUARDA DE ROTAS NÃO IMPLEMENTADAS
-// ==========================================
-
 app.use("/api", (_req: Request, res: Response) => {
   return res.status(404).json({
     message: "Endpoint não encontrado.",
   });
 });
 
-// ==========================================
-// INICIALIZAÇÃO DO SERVIDOR
-// ==========================================
-
 if (process.env.NODE_ENV !== "production") {
   const server = app.listen(port, async () => {
     try {
       await prisma.$connect();
-
       console.log(
         `API online na porta ${port}; conexão MySQL estabelecida.`
       );
@@ -1981,7 +1906,6 @@ if (process.env.NODE_ENV !== "production") {
     }
   });
 
-  // Encerramento seguro
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => {
       server.close(async () => {

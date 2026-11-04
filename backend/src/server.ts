@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
@@ -1248,7 +1247,7 @@ app.post("/api/applications", async (req: Request, res: Response) => {
     });
 
     console.log(
-      `[Inscrição] Cadastro realizado: ${application.id} - ${application.name}`
+      `[Inscrição] Cadastro realizado: ${application.id} \n ${application.name}`
     );
 
     return res.status(201).json({
@@ -1385,7 +1384,7 @@ app.post(
       });
 
       console.log(
-        `[Admin] Inscrição aprovada: ${application.name} - ${result.email}`
+        `[Admin] Inscrição aprovada: ${application.name} \n ${result.email}`
       );
 
       return res.status(200).json({
@@ -1966,27 +1965,31 @@ app.use("/api", (_req: Request, res: Response) => {
 // INICIALIZAÇÃO DO SERVIDOR
 // ==========================================
 
-const server = app.listen(port, async () => {
-  try {
-    await prisma.$connect();
+if (process.env.NODE_ENV !== "production") {
+  const server = app.listen(port, async () => {
+    try {
+      await prisma.$connect();
 
-    console.log(
-      `API online na porta ${port}; conexão MySQL estabelecida.`
-    );
-  } catch (error) {
-    console.error(
-      "API online, mas não foi possível conectar ao MySQL. Verifique DATABASE_URL no backend/.env.",
-      error
-    );
-  }
-});
-
-// Encerramento seguro
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => {
-    server.close(async () => {
-      await prisma.$disconnect();
-      process.exit(0);
-    });
+      console.log(
+        `API online na porta ${port}; conexão MySQL estabelecida.`
+      );
+    } catch (error) {
+      console.error(
+        "API online, mas não foi possível conectar ao MySQL. Verifique DATABASE_URL no backend/.env.",
+        error
+      );
+    }
   });
+
+  // Encerramento seguro
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => {
+      server.close(async () => {
+        await prisma.$disconnect();
+        process.exit(0);
+      });
+    });
+  }
 }
+
+export default app;

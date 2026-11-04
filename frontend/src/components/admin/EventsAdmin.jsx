@@ -20,9 +20,26 @@ const EventDialog = ({ open, onClose, initial, onSaved }) => {
     e.preventDefault();
     const body = { title: f.title, type: f.type, date: f.date, location: f.location, description: f.description, image_url: f.image_url };
     try {
-      if (initial) await api.put(`/events/${initial.id}`, body);
-      else await api.post("/events", body);
-      toast.success(initial ? "Evento atualizado" : "Evento criado");
+      if (initial) {
+        await api.put(`/events/${initial.id}`, body);
+        toast.success("Evento atualizado");
+      } else {
+        const { data } = await api.post("/events", body);
+        const notifications = data.email_notifications;
+        if (notifications?.status === "disabled") {
+          toast.success("Evento criado. O envio de e-mails está temporariamente desativado.");
+        } else if (notifications?.status === "unconfigured") {
+          toast.warning("Evento criado, mas os e-mails não foram enviados: configure o SMTP no backend.");
+        } else if (notifications?.status === "partial") {
+          toast.warning(`Evento criado. E-mails enviados: ${notifications.sent}/${notifications.total}; falhas: ${notifications.failed}.`);
+        } else if (notifications?.status === "failed") {
+          toast.warning("Evento criado, mas não foi possível enviar os e-mails. Verifique o SMTP e os logs do backend.");
+        } else if (notifications?.total === 0) {
+          toast.success("Evento criado. Não há membros ativos para notificar.");
+        } else {
+          toast.success(`Evento criado. ${notifications.sent} membro(s) notificado(s) por e-mail.`);
+        }
+      }
       onSaved(); onClose();
     } catch (err) { toast.error(errMsg(err)); }
   };
@@ -57,14 +74,12 @@ const EventDialog = ({ open, onClose, initial, onSaved }) => {
 
 export const EventsAdmin = () => {
   const [events, setEvents] = useState([]);
-  const [members, setMembers] = useState({});
   const [edit, setEdit] = useState(null);
   const [open, setOpen] = useState(false);
   const load = () => api.get("/events").then((r) => setEvents([...r.data].reverse()));
 
   useEffect(() => {
     load();
-    api.get("/members").then((r) => setMembers(Object.fromEntries(r.data.map((m) => [m.id, m.nickname || m.name]))));
   }, []);
 
   const remove = async (ev) => {
@@ -93,7 +108,15 @@ export const EventsAdmin = () => {
                 <div className="text-xs text-zinc-400 mt-1 space-y-0.5">
                   <div>{fmtDate(ev.date)}</div>
                   {ev.location && <div className="flex items-center gap-1"><MapPin size={12} />{ev.location}</div>}
-                  <div className="flex items-start gap-1"><Users size={12} className="mt-0.5" />{ev.rsvp_count} confirmados{ev.rsvps?.length ? `: ${ev.rsvps.map((id) => members[id]).filter(Boolean).join(", ")}` : ""}</div>
+                  <div className="flex items-start gap-1">
+                    <Users size={12} className="mt-0.5 shrink-0" />
+                    <span>
+                      {ev.rsvp_count} confirmados
+                      {ev.attendees?.length > 0
+                        ? `: ${ev.attendees.map((attendee) => attendee.name).join(", ")}`
+                        : " — nenhum membro confirmou ainda"}
+                    </span>
+                  </div>
                   {ev.created_by && <div className="text-zinc-500">Criado por {ev.created_by}</div>}
                 </div>
               </div>

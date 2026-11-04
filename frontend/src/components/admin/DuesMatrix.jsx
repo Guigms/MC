@@ -32,6 +32,8 @@ export const DuesMatrix = () => {
       name: row?.name ?? "",
       email: row?.email ?? "",
       active: row?.active ?? false,
+      joined_year: Number(row?.joined_year),
+      joined_month: Number(row?.joined_month),
       months:
         row?.months &&
         typeof row.months === "object" &&
@@ -123,6 +125,9 @@ export const DuesMatrix = () => {
 
   // Garante que rows sempre seja um array
   const safeRows = Array.isArray(rows) ? rows : [];
+  const isEligible = (row, month) =>
+    year > row.joined_year ||
+    (year === row.joined_year && month >= row.joined_month);
 
   // Filtra os membros
   const visible = safeRows
@@ -135,7 +140,7 @@ export const DuesMatrix = () => {
     .filter(
       (r) =>
         !onlyPending ||
-        !r.months[String(curMonth)]
+        (isEligible(r, curMonth) && !r.months[String(curMonth)])
     );
 
   // Calcula o total pago no ano
@@ -261,9 +266,14 @@ export const DuesMatrix = () => {
                   const monthNumber = index + 1;
 
                   const paid = !!r.months[String(monthNumber)];
+                  const eligible = isEligible(r, monthNumber);
 
                   const late =
-                    !paid && monthNumber <= curMonth;
+                    eligible &&
+                    !paid &&
+                    (year < now.getFullYear() ||
+                      (year === now.getFullYear() &&
+                        monthNumber <= now.getMonth() + 1));
 
                   return (
                     <td
@@ -271,17 +281,22 @@ export const DuesMatrix = () => {
                       className="p-1.5 text-center"
                     >
                       <button
+                        disabled={!eligible}
                         onClick={() =>
                           toggle(r, monthNumber)
                         }
                         title={
-                          paid
+                          !eligible
+                            ? "Não se aplica: anterior à entrada do membro"
+                            : paid
                             ? "Marcar como pendente"
                             : "Marcar como pago"
                         }
                         data-testid={`dues-cell-${r.id}-${monthNumber}`}
                         className={`dues-cell h-9 w-9 rounded-md inline-flex items-center justify-center border ${
-                          paid
+                          !eligible
+                            ? "border-transparent text-zinc-700 cursor-not-allowed"
+                            : paid
                             ? "bg-green-500/20 border-green-500/50 text-green-300 shadow-[0_0_12px_rgba(34,197,94,.25)]"
                             : late
                             ? "bg-red-500/10 border-red-500/30 text-red-400"
@@ -293,7 +308,7 @@ export const DuesMatrix = () => {
                         ) : late ? (
                           <X size={14} />
                         ) : (
-                          "·"
+                          eligible ? "·" : "—"
                         )}
                       </button>
                     </td>

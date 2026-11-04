@@ -1,6 +1,6 @@
 import { PublicNav } from "@/components/landing/PublicNav";
 import { Hero } from "@/components/landing/Hero";
-import { About, Contact, EventsTeaser, Footer, Gallery, Marquee } from "@/components/landing/Sections";
+import { About, Contact, Footer, Gallery, Marquee, Partnerships } from "@/components/landing/Sections";
 
 export default function Landing() {
   return (
@@ -10,8 +10,8 @@ export default function Landing() {
       <Marquee />
       <About />
       <div className="tread" />
-      <EventsTeaser />
       <Gallery />
+      <Partnerships />
       <Contact />
       <Footer />
     </div>

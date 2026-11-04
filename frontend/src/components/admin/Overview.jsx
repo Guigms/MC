@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
-import { api, fmtMoney, MONTHS } from "@/lib/api";
+import { api, errMsg, fmtMoney, MONTHS } from "@/lib/api";
 import { Speedometer } from "@/components/moto/Speedometer";
 import { EventCard } from "@/components/member/EventsList";
 
 export const Overview = () => {
   const [o, setO] = useState(null);
+  const [error, setError] = useState("");
   useEffect(() => {
-    api.get("/admin/overview").then((r) => setO(r.data));
+    let active = true;
+    api.get("/admin/overview")
+      .then((r) => {
+        if (active) setO(r.data);
+      })
+      .catch((err) => {
+        if (active) setError(err?.response?.data?.message || errMsg(err));
+      });
+    return () => {
+      active = false;
+    };
   }, []);
+  if (error) return <p role="alert" className="text-sm text-red-400">{error}</p>;
   if (!o) return null;
-  const pct = o.active_members ? Math.round((o.paid_this_month / o.active_members) * 100) : 0;
+  const eligibleMembers = o.paid_this_month + o.unpaid_this_month;
+  const pct = eligibleMembers ? Math.round((o.paid_this_month / eligibleMembers) * 100) : 0;
   return (
     <div className="space-y-8" data-testid="admin-overview">
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">

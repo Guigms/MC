@@ -1,5 +1,5 @@
 {
-  "project_title": "Biker 85 Girls & Customizable Moto Club Platform",
+  "project_title": "Biker Girls 85 & Customizable Moto Grupo Platform",
   "locale": "pt-BR",
   "app_type": "hybrid_fullstack",
   "persona_and_theme": {
@@ -20,7 +20,7 @@
     }
   },
   "color_system": {
-    "default_club": "Biker 85 Girls",
+    "default_club": "Biker Girls 85",
     "css_variables_definition": {
       "--bg-main": "#0B0C10",
       "--bg-card": "#12141C",
@@ -37,7 +37,7 @@
     "guidelines": "Never use pure #000000. Use rich asphalt charcoal (#0B0C10) tint with metallic borders and glowing neon accents. Text must maintain minimum 4.5:1 contrast against dark surfaces."
   },
   "visual_enhancers": {
-    "motoclub_effects": [
+    "motogrupo_effects": [
       "Metallic exhaust pipe glow lines on hover",
       "Speedometer-style percentage meters for dues and event attendances",
       "Leather grain/asphalt texture overlays with subtle SVG noise",
@@ -49,7 +49,7 @@
   "page_layouts": {
     "public_landing": {
       "header": "Sticky translucent navbar with club logo, nav links (Sobre, Encontros & Eventos, Galeria, Contato), and 'Área do Membro' CTA button",
-      "hero": "Bold hero section with Biker 85 Girls custom chopper artwork, animated heading, quick stats (Membros Ativas, Quilômetros Rodados, Eventos do Ano), and 'Junte-se ao Moto Club' action",
+      "hero": "Bold hero section with Biker Girls 85 custom chopper artwork, animated heading, quick stats (Membros Ativas, Quilômetros Rodados, Eventos do Ano), and 'Junte-se ao Moto Grupo' action",
       "events_preview": "Grid showing upcoming public rallies with location, date badge, and 'Exclusivo para Membros' teaser tags",
       "gallery": "Bento-style visual gallery of motorcycle trips, rallies, and club patches",
       "footer": "Dark high-contrast footer with club logo, social links, terms, and admin portal access"

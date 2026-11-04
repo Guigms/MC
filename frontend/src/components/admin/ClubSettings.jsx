@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, errMsg } from "@/lib/api";
 import { applyTheme, useClub } from "@/context/ClubContext";
 
-const TEXT = [["club_name", "Nome do club"], ["tagline", "Subtítulo (ex: Moto Club)"], ["hero_title", "Título principal"], ["city", "Cidade / base"], ["founded_year", "Ano de fundação"], ["contact_email", "E-mail de contato"], ["contact_phone", "Telefone"], ["whatsapp", "WhatsApp (com DDD)"], ["instagram", "Instagram (@usuario)"], ["hero_image", "URL da imagem de fundo"]];
+const TEXT = [["club_name", "Nome do club"], ["tagline", "Subtítulo (ex: Moto Grupo)"], ["hero_title", "Título principal"], ["city", "Cidade / base"], ["contact_email", "E-mail de contato"], ["contact_phone", "Telefone"], ["whatsapp", "WhatsApp (com DDD)"], ["instagram", "Instagram (@usuario)"]];
 
 export const resizeImage = (file, max = 600, type = "image/png") => new Promise((res) => {
   const img = new Image();
@@ -27,11 +27,17 @@ export const ClubSettings = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    applyTheme(f);
+    if (f) applyTheme(f);
   }, [f]);
   const clubRef = useRef(club);
   clubRef.current = club;
-  useEffect(() => () => applyTheme(clubRef.current), []);
+  useEffect(() => () => {
+    if (clubRef.current) applyTheme(clubRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (club) setF(club);
+  }, [club]);
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
@@ -40,15 +46,28 @@ export const ClubSettings = () => {
     if (file) setF({ ...f, logo_url: await resizeImage(file) });
   };
 
+  const onHeroImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) setF({ ...f, hero_image: await resizeImage(file, 1600, "image/jpeg") });
+  };
+
   const save = async (e) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const { data } = await api.put("/settings", { ...f, monthly_fee: Number(f.monthly_fee) });
+      const { data } = await api.put("/settings", {
+        ...f,
+        gallery: (f.gallery || []).map((item) => item.trim()).filter(Boolean),
+        monthly_fee: Number(f.monthly_fee),
+      });
+      setF(data);
       setClub(data);
-      toast.success("Personalização salva");
+      applyTheme(data);
+      toast.success("Personalização do site salva");
     } catch (err) { toast.error(errMsg(err)); } finally { setBusy(false); }
   };
+
+  if (!f) return <p className="text-sm text-zinc-400">Carregando configurações...</p>;
 
   return (
     <form onSubmit={save} className="grid lg:grid-cols-[1fr_340px] gap-8" data-testid="admin-club-settings">
@@ -58,6 +77,17 @@ export const ClubSettings = () => {
             <div key={k} className="space-y-1.5"><Label>{l}</Label>
               <Input value={f[k] || ""} onChange={set(k)} className="bg-black/30" data-testid={`settings-${k}`} /></div>
           ))}
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Imagem de fundo da página inicial</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={f.hero_image || ""} placeholder="Cole a URL da imagem ou envie um arquivo" onChange={set("hero_image")} className="bg-black/30" data-testid="settings-hero_image" />
+              <label className="btn-ghost-metal cursor-pointer flex shrink-0 items-center justify-center gap-2 px-4 py-2 text-sm" data-testid="settings-hero-image-upload-label">
+                <Upload size={15} /> Enviar imagem
+                <input type="file" accept="image/*" onChange={onHeroImage} className="hidden" data-testid="settings-hero-image-upload" />
+              </label>
+            </div>
+            {f.hero_image && <img src={f.hero_image} alt="Prévia do fundo da página inicial" className="h-36 w-full rounded-lg object-cover border border-white/10" data-testid="settings-hero-image-preview" />}
+          </div>
           <div className="space-y-1.5"><Label>Mensalidade (R$)</Label>
             <Input type="number" step="0.01" min="0" value={f.monthly_fee} onChange={set("monthly_fee")} className="bg-black/30" data-testid="settings-monthly_fee" /></div>
         </div>
@@ -65,8 +95,9 @@ export const ClubSettings = () => {
           <Textarea rows={2} value={f.hero_subtitle} onChange={set("hero_subtitle")} className="bg-black/30" data-testid="settings-hero_subtitle" /></div>
         <div className="space-y-1.5"><Label>Sobre o club</Label>
           <Textarea rows={5} value={f.about_text} onChange={set("about_text")} className="bg-black/30" data-testid="settings-about_text" /></div>
-        <div className="space-y-1.5"><Label>Galeria (uma URL de imagem por linha)</Label>
-          <Textarea rows={4} value={(f.gallery || []).join("\n")} onChange={(e) => setF({ ...f, gallery: e.target.value.split("\n") })} className="bg-black/30 font-mono-x text-xs" data-testid="settings-gallery" /></div>
+        <div className="space-y-1.5"><Label>Histórias (uma URL de foto ou vídeo por linha)</Label>
+          <Textarea rows={4} value={(f.gallery || []).join("\n")} onChange={(e) => setF({ ...f, gallery: e.target.value.split("\n") })} className="bg-black/30 font-mono-x text-xs" data-testid="settings-gallery" />
+          <p className="text-xs text-zinc-500">Aceita imagens, links do YouTube ou Vimeo e vídeos MP4, WebM ou OGG.</p></div>
       </div>
 
       <div className="space-y-6">

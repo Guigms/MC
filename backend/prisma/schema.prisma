@@ -40,13 +40,13 @@ model LoginAttempt {
 
 model ClubSettings {
   id           String  @id @default("club") @db.VarChar(32)
-  clubName     String  @default("Biker 85 Girls") @map("club_name") @db.VarChar(160)
-  tagline      String  @default("Moto Club") @db.VarChar(255)
+  clubName     String  @default("Biker Girls 85") @map("club_name") @db.VarChar(160)
+  tagline      String  @default("Moto Grupo") @db.VarChar(255)
   heroTitle    String  @default("Mulheres, motores e estrada sem fim") @map("hero_title") @db.VarChar(255)
   heroSubtitle String  @map("hero_subtitle") @db.Text
   aboutText    String  @map("about_text") @db.Text
   logoUrl      String  @map("logo_url") @db.MediumText
-  heroImage    String  @map("hero_image") @db.Text
+  heroImage    String  @map("hero_image") @db.MediumText
   primaryColor String  @default("#e85a9b") @map("primary_color") @db.VarChar(20)
   accentColor  String  @default("#ff2a85") @map("accent_color") @db.VarChar(20)
   monthlyFee   Decimal @default(30.00) @map("monthly_fee") @db.Decimal(10, 2)

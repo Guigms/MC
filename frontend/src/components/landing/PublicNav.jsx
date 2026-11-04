@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useClub } from "@/context/ClubContext";
 
-const links = [["sobre", "Sobre"], ["eventos", "Eventos"], ["galeria", "Galeria"], ["contato", "Contato"]];
+const links = [["sobre", "Quem somos"], ["galeria", "Nossas histórias"], ["parcerias", "Parcerias"], ["contato", "Contato"]];
 
 export const PublicNav = () => {
   const { club } = useClub();

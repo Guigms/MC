@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
 });
 
 export function errMsg(e) {
-  const d = e?.response?.data?.detail;
+  const d = e?.response?.data?.detail ?? e?.response?.data?.message;
   if (d == null) return e?.message || "Algo deu errado. Tente novamente.";
   if (typeof d === "string") return d;
   if (Array.isArray(d)) return d.map((x) => x?.msg || JSON.stringify(x)).join(" ");

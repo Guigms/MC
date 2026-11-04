@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Lock, Mail, Phone, Instagram, MapPin, MessageCircle, CalendarClock } from "lucide-react";
-import { api, fmtMoney } from "@/lib/api";
+import { Handshake, Mail, Phone, Instagram, MapPin, MessageCircle } from "lucide-react";
+import { api } from "@/lib/api";
 import { useClub } from "@/context/ClubContext";
 import { Speedometer } from "@/components/moto/Speedometer";
 
@@ -26,18 +26,31 @@ export const Marquee = () => {
 export const About = () => {
   const { club } = useClub();
   const [stats, setStats] = useState({ members: 0, events_year: 0, upcoming: 0 });
+  const aboutParagraphs = (club.about_text || "").split(/\n\s*\n/);
   useEffect(() => {
     api.get("/public/stats").then((r) => setStats(r.data)).catch(() => {});
   }, []);
   return (
     <section id="sobre" className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32 grid lg:grid-cols-2 gap-16 items-center">
       <motion.div {...fade}>
-        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Quem somos</span>
-        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Mais que um club.<br />Uma <span className="text-brand">família</span> sobre rodas.</h2>
-        <p className="mt-6 text-zinc-300 leading-relaxed whitespace-pre-line" data-testid="about-text">{club.about_text}</p>
+        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Nossa história e propósito</span>
+        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Mais que um grupo.<br />Uma <span className="text-brand">família</span> sobre rodas.</h2>
+        <div className="mt-6 space-y-4 text-zinc-300 leading-relaxed" data-testid="about-text">
+          {aboutParagraphs.map((paragraph, index) => {
+            const parts = paragraph.split(/\*\*(.*?)\*\*/g);
+            return (
+              <p key={index}>
+                {parts.map((part, partIndex) =>
+                  partIndex % 2 === 1
+                    ? <strong key={partIndex} className="text-white">{part}</strong>
+                    : part
+                )}
+              </p>
+            );
+          })}
+        </div>
         <div className="mt-8 flex flex-wrap gap-6 font-mono-x text-xs uppercase tracking-widest text-zinc-400">
-          <span>Fundação: <b className="text-white">{club.founded_year}</b></span>
-          <span>Mensalidade: <b className="text-white">{fmtMoney(club.monthly_fee)}</b></span>
+          <span>Nosso propósito: <b className="text-white">irmandade, liberdade e estrada</b></span>
         </div>
       </motion.div>
       <motion.div {...fade} className="card-metal p-6 sm:p-10 grid grid-cols-1 sm:grid-cols-3 gap-6 place-items-center">
@@ -49,59 +62,97 @@ export const About = () => {
   );
 };
 
-export const EventsTeaser = () => (
-  <section id="eventos" className="relative py-24 sm:py-32 overflow-hidden">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6">
-      <motion.div {...fade} className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Agenda</span>
-          <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Eventos & Encontros</h2>
-          <p className="mt-4 text-zinc-400 max-w-lg">Nossa agenda completa de rolês, viagens e encontros é exclusiva para membros.</p>
-        </div>
-        <Link to="/login" className="btn-rev px-7 py-3 text-sm self-start" data-testid="events-teaser-login-button">Entrar para ver a agenda</Link>
-      </motion.div>
-      <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[0, 1, 2].map((i) => (
-          <motion.div key={i} {...fade} transition={{ duration: 0.6, delay: i * 0.12 }} className="card-metal hoverable p-6 relative overflow-hidden" data-testid={`event-teaser-card-${i}`}>
-            <div className="blur-[6px] select-none pointer-events-none">
-              <div className="flex gap-4 items-center">
-                <div className="h-16 w-16 rounded-lg bg-brand/30" />
-                <div className="space-y-2 flex-1"><div className="h-4 bg-white/20 rounded w-3/4" /><div className="h-3 bg-white/10 rounded w-1/2" /></div>
-              </div>
-              <div className="mt-6 h-3 bg-white/10 rounded" /><div className="mt-2 h-3 bg-white/10 rounded w-5/6" />
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0b0c10]/40">
-              <Lock className="text-brand" /><span className="font-mono-x text-[11px] uppercase tracking-[0.25em] text-zinc-300">Exclusivo para membros</span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+const getVideoSource = (src) => {
+  let url;
+  try {
+    url = new URL(src, window.location.origin);
+  } catch {
+    return null;
+  }
+
+  if (!["http:", "https:"].includes(url.protocol)) return null;
+
+  const youtubeId =
+    url.hostname === "youtu.be"
+      ? url.pathname.slice(1)
+      : ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(url.hostname)
+        ? url.pathname === "/watch"
+          ? url.searchParams.get("v")
+          : url.pathname.startsWith("/embed/")
+            ? url.pathname.split("/")[2]
+            : null
+        : null;
+
+  if (youtubeId && /^[\w-]{11}$/.test(youtubeId)) {
+    return { type: "embed", src: `https://www.youtube-nocookie.com/embed/${youtubeId}` };
+  }
+
+  const vimeoId = url.hostname === "vimeo.com" && url.pathname.match(/^\/(\d+)$/)?.[1];
+  if (vimeoId) return { type: "embed", src: `https://player.vimeo.com/video/${vimeoId}` };
+
+  if (/\.(mp4|webm|ogg)$/i.test(url.pathname)) {
+    return { type: "video", src: url.href };
+  }
+
+  return null;
+};
 
 export const Gallery = () => {
   const { club } = useClub();
-  const imgs = (club.gallery || []).filter(Boolean);
-  if (!imgs.length) return null;
+  const media = (club.gallery || []).filter(Boolean);
 
   return (
     <section id="galeria" className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
       <motion.div {...fade}>
-        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Galeria</span>
-        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Na estrada</h2>
+        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Nossas histórias</span>
+        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Na estrada, juntas</h2>
+        <p className="mt-4 max-w-2xl text-zinc-400"><b className="text-white">Nossos rolês:</b> passeios, viagens e encontros registrados em fotos e vídeos. Momentos e caminhos que compartilhamos.</p>
       </motion.div>
-      <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 auto-rows-[260px] sm:auto-rows-[420px] gap-3 sm:gap-4">
-        {imgs.slice(0, 6).map((src, i) => (
+      {media.length > 0 && (
+        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[260px] sm:auto-rows-[340px] gap-3 sm:gap-4">
+        {media.slice(0, 9).map((src, i) => {
+          const video = getVideoSource(src);
+          return (
           <motion.div key={src + i} {...fade} transition={{ duration: 0.6, delay: i * 0.08 }} className={`group relative overflow-hidden rounded-xl border border-white/10 ${i % 2 ? "lg:translate-y-10" : ""}`} data-testid={`gallery-item-${i}`}>
-            <img src={src} alt="" className="h-full w-full object-cover object-top grayscale-[60%] group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10]/80 to-transparent opacity-80 group-hover:opacity-30 transition-opacity duration-500" />
+            {video?.type === "embed" ? (
+              <iframe
+                src={video.src}
+                title={`Vídeo das histórias do club ${i + 1}`}
+                className="h-full w-full"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                data-testid={`gallery-video-${i}`}
+              />
+            ) : video?.type === "video" ? (
+              <video src={video.src} controls preload="metadata" className="h-full w-full object-cover" data-testid={`gallery-video-${i}`} />
+            ) : (
+              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover object-top grayscale-[60%] group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
+            )}
+            {video ? null : <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0b0c10]/80 to-transparent opacity-80 group-hover:opacity-30 transition-opacity duration-500" />}
           </motion.div>
-        ))}
-      </div>
+          );
+        })}
+        </div>
+      )}
     </section>
   );
 };
+
+export const Partnerships = () => (
+  <section id="parcerias" className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
+    <motion.div {...fade} className="card-metal p-8 sm:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+      <div className="max-w-2xl">
+        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Parcerias</span>
+        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Empresas que apoiam o movimento</h2>
+        <p className="mt-4 text-zinc-400">Valorizamos quem fortalece a irmandade, a liberdade e a presença das mulheres na estrada. Quer apoiar o club e construir essa parceria com a gente?</p>
+      </div>
+      <a href="#contato" className="btn-rev inline-flex items-center justify-center gap-2 px-7 py-3 text-sm shrink-0" data-testid="partnership-contact-link">
+        <Handshake size={17} /> Seja uma parceira
+      </a>
+    </motion.div>
+  </section>
+);
 
 const ContactItem = ({ icon: Icon, label, value, href, testId }) =>
   value ? (
@@ -128,7 +179,6 @@ export const Contact = () => {
         <ContactItem icon={MessageCircle} label="WhatsApp" value={club.whatsapp} href={`https://wa.me/${wa}`} testId="contact-whatsapp" />
         <ContactItem icon={Instagram} label="Instagram" value={club.instagram} href={`https://instagram.com/${(club.instagram || "").replace("@", "")}`} testId="contact-instagram" />
         <ContactItem icon={MapPin} label="Base" value={club.city} href="#contato" testId="contact-city" />
-        <ContactItem icon={CalendarClock} label="Desde" value={club.founded_year} href="#sobre" testId="contact-founded" />
       </div>
     </section>
   );

@@ -1,11 +1,11 @@
-# PRD — Sistema para Moto Clubs (Biker 85 Girls / white-label)
+# PRD — Sistema para Moto Grupos (Biker Girls 85 / white-label)
 
 ## Original problem statement
 crie um sistema para clubs de moto, com area de membro
 area do administrador, onde ele pode ver os eventos, os encontros adicionados pelos administradores.
 deve ter a pagina do club e a ´pagina do membro
 deve ter o controle de mensalidade para ver quem esta pagando ou nao, controle de usuario.
-a imagem anexada, é a logo do moto club, mas quero que voce faça de uma forma que a seja de facil customização para quando for aplicado a novos moto clubs
+a imagem anexada, é a logo do moto grupo, mas quero que voce faça de uma forma que a seja de facil customização para quando for aplicado a novos moto grupos
 User choices: login e-mail+senha; admin marca mensalidade manualmente; página do club pública, eventos só para membros; mensalidade R$30; "faça o melhor site de club de motos do mundo, efeitos visuais que remetam a motos".
 
 ## Architecture

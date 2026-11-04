@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -108,21 +107,23 @@ const Field = ({
   full,
 }) => (
   <div className={`space-y-1.5 ${full ? "sm:col-span-2" : ""}`}>
-    <Label>
+    <Label htmlFor={`join-${k}`}>
       {label}
 
       {req && <span className="text-brand"> *</span>}
     </Label>
 
     <Input
+      id={`join-${k}`}
+      name={k}
       type={type}
       required={req}
       value={f[k] ?? ""}
       onChange={(e) =>
-        setF({
-          ...f,
+        setF((current) => ({
+          ...current,
           [k]: e.target.value,
-        })
+        }))
       }
       className="bg-black/30 h-11"
       data-testid={`join-${k}`}
@@ -144,10 +145,10 @@ const YesNo = ({ label, k, f, setF }) => (
           type="button"
           key={l}
           onClick={() =>
-            setF({
-              ...f,
+            setF((current) => ({
+              ...current,
               [k]: v,
-            })
+            }))
           }
           data-testid={`join-${k}-${v ? "sim" : "nao"}`}
           className={`px-5 py-1.5 text-sm ${
@@ -208,38 +209,8 @@ export default function Join() {
     }));
   };
 
-  // Envia a inscrição
-  const submit = async (e) => {
-    e.preventDefault();
-
-    setError("");
-
-    // Validação das perguntas Sim / Não
-    if (
-      [
-        f.has_motorcycle,
-        f.other_group,
-        f.commit_events,
-        f.has_cnh_a,
-        f.has_medication_allergy,
-      ].some((v) => v === null)
-    ) {
-      setError("Responda todas as perguntas de Sim / Não.");
-      return;
-    }
-
-    // Validação da alergia
-    if (
-      f.has_medication_allergy === true &&
-      !f.medication_allergy_details.trim()
-    ) {
-      setError(
-        "Informe o medicamento e a reação alérgica apresentada."
-      );
-      return;
-    }
-
-    // Validação dos contatos de emergência
+  // Validação dos contatos de emergência
+  const validateEmergencyContacts = () => {
     const contacts = [
       {
         name: f.emergency_contact_1_name,
@@ -253,33 +224,112 @@ export default function Join() {
       },
     ];
 
-    const invalidContact = contacts.some(
+    return contacts.every(
       (contact) =>
-        !contact.name.trim() ||
-        !contact.phone.trim() ||
-        !contact.relationship.trim()
+        contact.name.trim() &&
+        contact.phone.trim() &&
+        contact.relationship.trim()
     );
+  };
 
-    if (invalidContact) {
+  // Envia a inscrição
+  const submit = async (e) => {
+    e.preventDefault();
+
+    console.log("[Inscrição] 1. Submit acionado");
+
+    if (busy) {
+      console.warn("[Inscrição] Envio ignorado: já existe um envio em andamento.");
+      return;
+    }
+
+    setError("");
+
+    // Validação nativa dos campos obrigatórios
+    const form = e.currentTarget;
+
+    if (!form.checkValidity()) {
+      console.warn(
+        "[Inscrição] 2. Existem campos obrigatórios inválidos."
+      );
+
+      form.reportValidity();
+
+      setError(
+        "Confira os campos obrigatórios e corrija os dados destacados."
+      );
+
+      return;
+    }
+
+    console.log("[Inscrição] 2. Validação nativa concluída.");
+
+    // Validação das perguntas Sim / Não
+    const unansweredQuestions = [
+      f.has_motorcycle,
+      f.other_group,
+      f.commit_events,
+      f.has_cnh_a,
+      f.has_medication_allergy,
+    ].some((value) => value === null);
+
+    if (unansweredQuestions) {
+      console.warn(
+        "[Inscrição] Perguntas de Sim / Não não respondidas."
+      );
+
+      setError("Responda todas as perguntas de Sim / Não.");
+
+      return;
+    }
+
+    // Validação da alergia
+    if (
+      f.has_medication_allergy === true &&
+      !f.medication_allergy_details.trim()
+    ) {
+      setError(
+        "Informe o medicamento e a reação alérgica apresentada."
+      );
+
+      return;
+    }
+
+    // Validação dos contatos de emergência
+    if (!validateEmergencyContacts()) {
       setError(
         "Preencha nome, telefone e parentesco dos dois contatos de emergência."
       );
+
       return;
     }
+
+    console.log("[Inscrição] 3. Todas as validações passaram.");
+
+    const payload = {
+      ...f,
+      age: f.age ? Number(f.age) : null,
+      medication_allergy_details:
+        f.has_medication_allergy === true
+          ? f.medication_allergy_details.trim()
+          : "",
+    };
+
+    console.log("[Inscrição] 4. Payload preparado:", payload);
 
     setBusy(true);
 
     try {
-      const payload = {
-        ...f,
-        age: f.age ? Number(f.age) : null,
-        medication_allergy_details:
-          f.has_medication_allergy
-            ? f.medication_allergy_details.trim()
-            : "",
-      };
+      console.log(
+        "[Inscrição] 5. Enviando POST para /applications"
+      );
 
-      await api.post("/applications", payload);
+      const response = await api.post("/applications", payload);
+
+      console.log(
+        "[Inscrição] 6. Inscrição enviada com sucesso:",
+        response.data
+      );
 
       setDone(true);
 
@@ -288,6 +338,11 @@ export default function Join() {
         behavior: "smooth",
       });
     } catch (err) {
+      console.error(
+        "[Inscrição] Erro ao enviar inscrição:",
+        err
+      );
+
       setError(errMsg(err));
     } finally {
       setBusy(false);
@@ -330,7 +385,11 @@ export default function Join() {
         {done ? (
           <Success club={club} />
         ) : (
-          <form onSubmit={submit} className="space-y-6">
+          <form
+            onSubmit={submit}
+            noValidate
+            className="space-y-6"
+          >
             {/* DADOS BÁSICOS */}
             <Block icon={Bike} title="Dados básicos" i={0}>
               <Field
@@ -383,11 +442,11 @@ export default function Join() {
                       type="button"
                       key={t}
                       onClick={() =>
-                        setF({
-                          ...f,
+                        setF((current) => ({
+                          ...current,
                           blood_type:
-                            f.blood_type === t ? "" : t,
-                        })
+                            current.blood_type === t ? "" : t,
+                        }))
                       }
                       data-testid={`join-blood-${t}`}
                       className={`min-w-12 px-3 py-1.5 text-sm font-semibold ${
@@ -510,10 +569,10 @@ export default function Join() {
                   rows={5}
                   value={f.reason}
                   onChange={(e) =>
-                    setF({
-                      ...f,
+                    setF((current) => ({
+                      ...current,
                       reason: e.target.value,
-                    })
+                    }))
                   }
                   className="bg-black/30"
                   data-testid="join-reason"
@@ -564,11 +623,11 @@ export default function Join() {
                     rows={3}
                     value={f.medication_allergy_details}
                     onChange={(e) =>
-                      setF({
-                        ...f,
+                      setF((current) => ({
+                        ...current,
                         medication_allergy_details:
                           e.target.value,
-                      })
+                      }))
                     }
                     placeholder="Informe o medicamento e os sintomas da reação alérgica."
                     className="bg-black/30"
@@ -668,6 +727,7 @@ export default function Join() {
             {error && (
               <p
                 className="text-sm text-red-400"
+                role="alert"
                 data-testid="join-error"
               >
                 {error}

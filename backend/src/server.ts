@@ -2,13 +2,41 @@ import "dotenv/config";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import path from "path";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import nodemailer from "nodemailer";
 
 const app = express();
 const prisma = new PrismaClient();
+
+type OverviewPayment = {
+  month: number;
+  amount: number | string | { toString(): string };
+  user: { active: boolean; joinedAt: Date };
+};
+
+type DuesPayment = {
+  month: number;
+  amount: number | string | { toString(): string };
+};
+
+type DuesMember = {
+  id: string;
+  name: string;
+  email: string;
+  active: boolean;
+  joinedAt: Date;
+  payments: DuesPayment[];
+};
+
+type ProductResponseItem = {
+  name: string;
+  email: string;
+  want: boolean;
+  size: string;
+  quantity: number;
+};
 
 const port = Number(
   process.env.BACKEND_PORT ?? process.env.PORT ?? 3001
@@ -935,24 +963,27 @@ app.get("/api/admin/overview", async (_req: Request, res: Response) => {
       }),
     ]);
 
-    const eligiblePayments = payments.filter((payment) =>
-      isMembershipMonthEligible(payment.user.joinedAt, year, payment.month)
+    const eligiblePayments = (payments as OverviewPayment[]).filter(
+      (payment: OverviewPayment) =>
+        isMembershipMonthEligible(payment.user.joinedAt, year, payment.month)
     );
     const monthlyPayments = eligiblePayments.filter(
-      (payment) => payment.month === month
+      (payment: OverviewPayment) => payment.month === month
     );
     const paidThisMonth = monthlyPayments.filter(
-      (payment) => payment.user.active
+      (payment: OverviewPayment) => payment.user.active
     ).length;
     const eligibleMembers = activeMembers.filter(({ joinedAt }) =>
       isMembershipMonthEligible(joinedAt, year, month)
     ).length;
     const revenue_year = eligiblePayments.reduce(
-      (total, payment) => total + Number(payment.amount),
+      (total: number, payment: OverviewPayment) =>
+        total + Number(payment.amount),
       0
     );
     const revenue_month = monthlyPayments.reduce(
-      (total, payment) => total + Number(payment.amount),
+      (total: number, payment: OverviewPayment) =>
+        total + Number(payment.amount),
       0
     );
 
@@ -1002,21 +1033,23 @@ const getDuesHandler = async (req: Request, res: Response) => {
     });
 
     return res.json({
-      rows: members.map(({ payments, joinedAt, ...member }) => ({
-        ...member,
-        joined_year: joinedAt.getFullYear(),
-        joined_month: joinedAt.getMonth() + 1,
-        months: Object.fromEntries(
-          payments
-            .filter((payment) =>
-              isMembershipMonthEligible(joinedAt, year, payment.month)
-            )
-            .map((payment) => [
-              String(payment.month),
-              { amount: Number(payment.amount) },
-            ])
-        ),
-      })),
+      rows: (members as DuesMember[]).map(
+        ({ payments, joinedAt, ...member }) => ({
+          ...member,
+          joined_year: joinedAt.getFullYear(),
+          joined_month: joinedAt.getMonth() + 1,
+          months: Object.fromEntries(
+            payments
+              .filter((payment: DuesPayment) =>
+                isMembershipMonthEligible(joinedAt, year, payment.month)
+              )
+              .map((payment: DuesPayment) => [
+                String(payment.month),
+                { amount: Number(payment.amount) },
+              ])
+          ),
+        })
+      ),
     });
   } catch (error) {
     console.error("[Dues] Erro ao buscar mensalidades:", error);
@@ -1296,7 +1329,7 @@ app.post(
       const tempPassword = randomBytes(9).toString("base64url");
       const passwordHash = await bcrypt.hash(tempPassword, 12);
 
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const user = await tx.user.create({
           data: {
             name: application.name,
@@ -1829,7 +1862,9 @@ app.post("/api/products/:id/response", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "O prazo para responder a este produto encerrou." });
     }
     const sizes = Array.isArray(product.sizes)
-      ? product.sizes.filter((item): item is string => typeof item === "string")
+      ? product.sizes.filter(
+          (item: unknown): item is string => typeof item === "string"
+        )
       : [];
     if (want && ((sizes.length && !sizes.includes(size)) || (!sizes.length && size))) {
       return res.status(400).json({ message: "Escolha um tamanho válido para o produto." });
@@ -1860,15 +1895,17 @@ app.get("/api/products/:id/responses", requireAdmin, async (req: Request, res: R
     });
     if (!product) return res.status(404).json({ message: "Produto não encontrado." });
 
-    const items = product.orders.map((order: any) => ({
+    const items: ProductResponseItem[] = product.orders.map((order) => ({
       name: order.user.nickname || order.user.name,
       email: order.user.email,
       want: order.want,
       size: order.size,
       quantity: order.quantity,
     }));
-    const by_size = items.reduce<Record<string, number>>((acc: Record<string, number>, item: any) => {
-      if (item.want && item.size) acc[item.size] = (acc[item.size] ?? 0) + item.quantity;
+    const by_size = items.reduce<Record<string, number>>((acc, item) => {
+      if (item.want && item.size) {
+        acc[item.size] = (acc[item.size] ?? 0) + item.quantity;
+      }
       return acc;
     }, {});
 

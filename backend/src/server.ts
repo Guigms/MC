@@ -156,9 +156,10 @@ const notifyMembersOfNewEvent = async (event: {
       where: { role: "member", active: true },
       select: { email: true, name: true },
     });
-    const recipients = members.filter(({ email }) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    );
+    const recipients = members.filter(
+  (member: { email: string }) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)
+);
     const transporter = nodemailer.createTransport({
       host,
       port,

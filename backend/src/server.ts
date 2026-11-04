@@ -38,6 +38,26 @@ type ProductResponseItem = {
   quantity: number;
 };
 
+type EventEmailRecipient = {
+  email: string;
+  name: string;
+};
+
+type ActiveMemberSummary = {
+  joinedAt: Date;
+};
+
+type ProductOrderForResponse = {
+  want: boolean;
+  size: string;
+  quantity: number;
+  user: {
+    name: string;
+    nickname: string | null;
+    email: string;
+  };
+};
+
 const port = Number(
   process.env.BACKEND_PORT ?? process.env.PORT ?? 3001
 );
@@ -168,7 +188,7 @@ const notifyMembersOfNewEvent = async (event: {
     for (let index = 0; index < recipients.length; index += 5) {
       const batch = recipients.slice(index, index + 5);
       const results = await Promise.allSettled(
-        batch.map((recipient) =>
+        batch.map((recipient: EventEmailRecipient) =>
           transporter.sendMail({
             from,
             to: recipient.email,
@@ -973,8 +993,9 @@ app.get("/api/admin/overview", async (_req: Request, res: Response) => {
     const paidThisMonth = monthlyPayments.filter(
       (payment: OverviewPayment) => payment.user.active
     ).length;
-    const eligibleMembers = activeMembers.filter(({ joinedAt }) =>
-      isMembershipMonthEligible(joinedAt, year, month)
+    const eligibleMembers = (activeMembers as ActiveMemberSummary[]).filter(
+      ({ joinedAt }: ActiveMemberSummary) =>
+        isMembershipMonthEligible(joinedAt, year, month)
     ).length;
     const revenue_year = eligiblePayments.reduce(
       (total: number, payment: OverviewPayment) =>
@@ -1895,7 +1916,9 @@ app.get("/api/products/:id/responses", requireAdmin, async (req: Request, res: R
     });
     if (!product) return res.status(404).json({ message: "Produto não encontrado." });
 
-    const items: ProductResponseItem[] = product.orders.map((order) => ({
+    const items: ProductResponseItem[] = (
+      product.orders as ProductOrderForResponse[]
+    ).map((order: ProductOrderForResponse) => ({
       name: order.user.nickname || order.user.name,
       email: order.user.email,
       want: order.want,

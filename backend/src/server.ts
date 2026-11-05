@@ -157,9 +157,9 @@ const notifyMembersOfNewEvent = async (event: {
       select: { email: true, name: true },
     });
     const recipients = members.filter(
-  (member: { email: string }) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)
-);
+      (member: { email: string }) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)
+    );
     const transporter = nodemailer.createTransport({
       host,
       port,
@@ -237,8 +237,6 @@ app.use(
   })
 );
 
-// Essencial para a Vercel: aprova imediatamente as requisições OPTIONS (preflight)
-app.options('*', cors());
 
 app.use(
   "/api/settings/hero-image",
@@ -1937,9 +1935,9 @@ app.get("/api/products/:id/responses", requireAdmin, async (req: Request, res: R
     }, {});
 
     return res.json({
-      yes: items.filter((item: any) => item.want).length,
-      no: items.filter((item: any) => !item.want).length,
-      total: items.reduce((sum: number, item: any) => sum + (item.want ? item.quantity : 0), 0),
+      yes: items.filter((item: ProductResponseItem) => item.want).length,
+      no: items.filter((item: ProductResponseItem) => !item.want).length,
+      total: items.reduce((sum: number, item: ProductResponseItem) => sum + (item.want ? item.quantity : 0), 0),
       by_size,
       items,
     });
@@ -1955,16 +1953,21 @@ app.use("/api", (_req: Request, res: Response) => {
   });
 });
 
-if (process.env.NODE_ENV !== "production") {
+// ==========================================
+// INICIALIZAÇÃO DO SERVIDOR
+// ==========================================
+
+// Inicia a escuta da porta APENAS quando NÃO estiver rodando no ambiente da Vercel
+if (!process.env.VERCEL) {
   const server = app.listen(port, async () => {
     try {
       await prisma.$connect();
       console.log(
-        `API online na porta ${port}; conexão MySQL estabelecida.`
+        `API online localmente na porta ${port}; conexão MySQL estabelecida.`
       );
     } catch (error) {
       console.error(
-        "API online, mas não foi possível conectar ao MySQL. Verifique DATABASE_URL no backend/.env.",
+        "API online localmente, mas não foi possível conectar ao MySQL na HostGator.",
         error
       );
     }

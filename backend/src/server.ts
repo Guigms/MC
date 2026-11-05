@@ -232,10 +232,7 @@ const notifyMembersOfNewEvent = async (event: {
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Aceita dinamicamente qualquer origem, contornando o bloqueio rigoroso do navegador
-      callback(null, true);
-    },
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   })
 );

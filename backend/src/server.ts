@@ -370,6 +370,8 @@ app.get("/api/auth/me", async (req: Request, res: Response) => {
         motorcycle: true,
         bloodType: true,
         birthDate: true,
+        hasFoodRestriction: true,
+        foodRestrictionDetails: true,
         active: true,
         joinedAt: true,
       },
@@ -557,7 +559,7 @@ const defaultClubSettings = {
   accentColor: "#ff2a85",
   monthlyFee: 30,
   city: "Fortaleza - CE",
-  contactEmail: "[contato@seuclub.com]",
+  contactEmail: "[bikergirls.85oficial@gmail.com]",
   contactPhone: "85999588651",
   instagram: "",
   whatsapp: "",
@@ -769,6 +771,8 @@ const getUsersHandler = async (_req: Request, res: Response) => {
         motorcycle: true,
         bloodType: true,
         birthDate: true,
+        hasFoodRestriction: true,
+        foodRestrictionDetails: true,
         active: true,
         joinedAt: true,
       },
@@ -784,8 +788,8 @@ const getUsersHandler = async (_req: Request, res: Response) => {
   }
 };
 
-app.get("/api/users", getUsersHandler);
-app.get("/api/members", getUsersHandler);
+app.get("/api/users", requireAdmin, getUsersHandler);
+app.get("/api/members", requireAdmin, getUsersHandler);
 
 const memberFields = (member: {
   id: string;
@@ -797,6 +801,8 @@ const memberFields = (member: {
   motorcycle: string;
   bloodType: string;
   birthDate: string;
+  hasFoodRestriction: boolean;
+  foodRestrictionDetails: string;
   active: boolean;
   joinedAt: Date;
 }) => ({
@@ -809,6 +815,8 @@ const memberFields = (member: {
   motorcycle: member.motorcycle,
   blood_type: member.bloodType,
   birth_date: member.birthDate,
+  has_food_restriction: member.hasFoodRestriction,
+  food_restriction_details: member.foodRestrictionDetails,
   active: member.active,
   joined_at: member.joinedAt,
 });
@@ -834,6 +842,19 @@ const readMemberInput = (body: Record<string, unknown>) => {
     const value = body[snake] ?? body[camel];
     return typeof value === "string" ? value.trim() : "";
   };
+  const hasFoodRestriction =
+    body.has_food_restriction ?? body.hasFoodRestriction ?? false;
+  const foodRestrictionDetails = optionalString(
+    "food_restriction_details",
+    "foodRestrictionDetails",
+  );
+
+  if (typeof hasFoodRestriction !== "boolean") {
+    return { error: "Informe se o membro possui restrição alimentar." } as const;
+  }
+  if (hasFoodRestriction && !foodRestrictionDetails) {
+    return { error: "Informe qual é a restrição alimentar." } as const;
+  }
 
   return {
     data: {
@@ -846,6 +867,8 @@ const readMemberInput = (body: Record<string, unknown>) => {
       motorcycle: optionalString("motorcycle"),
       bloodType: optionalString("blood_type", "bloodType"),
       birthDate: optionalString("birth_date", "birthDate"),
+      hasFoodRestriction,
+      foodRestrictionDetails: hasFoodRestriction ? foodRestrictionDetails : "",
     },
   } as const;
 };
@@ -1189,6 +1212,8 @@ app.post("/api/applications", async (req: Request, res: Response) => {
       has_cnh_a,
       has_medication_allergy,
       medication_allergy_details,
+      has_food_restriction,
+      food_restriction_details,
       emergency_contact_1_name,
       emergency_contact_1_phone,
       emergency_contact_1_relationship,
@@ -1229,6 +1254,12 @@ app.post("/api/applications", async (req: Request, res: Response) => {
       });
     }
 
+    if (has_food_restriction === true && !String(food_restriction_details ?? "").trim()) {
+      return res.status(400).json({
+        message: "Informe qual é a restrição alimentar.",
+      });
+    }
+
     const application = await prisma.application.create({
       data: {
         name: String(name).trim(),
@@ -1251,6 +1282,11 @@ app.post("/api/applications", async (req: Request, res: Response) => {
         hasCnhA: has_cnh_a === true,
         hasMedicationAllergy: has_medication_allergy === true,
         medicationAllergyDetails: medication_allergy_details || "",
+        hasFoodRestriction: has_food_restriction === true,
+        foodRestrictionDetails:
+          has_food_restriction === true
+            ? String(food_restriction_details).trim()
+            : "",
         emergencyContact1Name: emergency_contact_1_name,
         emergencyContact1Phone: emergency_contact_1_phone,
         emergencyContact1Relationship: emergency_contact_1_relationship,
@@ -1363,6 +1399,8 @@ app.post(
             phone: application.whatsapp,
             motorcycle: application.motorcycleModel,
             bloodType: application.bloodType,
+            hasFoodRestriction: application.hasFoodRestriction,
+            foodRestrictionDetails: application.foodRestrictionDetails,
             active: true,
           },
         });

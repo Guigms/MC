@@ -18,6 +18,8 @@ model User {
   motorcycle          String         @default("") @db.VarChar(120)
   bloodType           String         @default("") @map("blood_type") @db.VarChar(4)
   birthDate           String         @default("") @map("birth_date") @db.VarChar(30)
+  hasFoodRestriction       Boolean        @default(false) @map("has_food_restriction")
+  foodRestrictionDetails   String         @default("") @map("food_restriction_details") @db.VarChar(1000)
   active              Boolean        @default(true)
   joinedAt            DateTime       @default(now()) @map("joined_at") @db.DateTime(3)
   eventRsvps          EventRsvp[]
@@ -126,6 +128,8 @@ model Application {
   hasCnhA         Boolean   @default(false) @map("has_cnh_a")
   hasMedicationAllergy Boolean @default(false) @map("has_medication_allergy")
   medicationAllergyDetails String @default("") @map("medication_allergy_details") @db.VarChar(1000)
+  hasFoodRestriction Boolean @default(false) @map("has_food_restriction")
+  foodRestrictionDetails String @default("") @map("food_restriction_details") @db.VarChar(1000)
   emergencyContact1Name String @default("") @map("emergency_contact_1_name") @db.VarChar(120)
   emergencyContact1Phone String @default("") @map("emergency_contact_1_phone") @db.VarChar(30)
   emergencyContact1Relationship String @default("") @map("emergency_contact_1_relationship") @db.VarChar(80)

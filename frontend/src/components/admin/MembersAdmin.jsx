@@ -6,10 +6,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api, errMsg } from "@/lib/api";
 
-const EMPTY = { name: "", email: "", password: "", role: "member", nickname: "", phone: "", motorcycle: "", blood_type: "", birth_date: "", active: true };
+const EMPTY = { name: "", email: "", password: "", role: "member", nickname: "", phone: "", motorcycle: "", blood_type: "", birth_date: "", has_food_restriction: false, food_restriction_details: "", active: true };
 const TEXT = [["name", "Nome *"], ["email", "E-mail *", "email"], ["nickname", "Apelido"], ["phone", "Telefone"], ["motorcycle", "Moto"], ["blood_type", "Tipo sanguíneo"], ["birth_date", "Nascimento", "date"]];
 
 const MemberDialog = ({ open, onClose, initial, onSaved }) => {
@@ -38,6 +39,28 @@ const MemberDialog = ({ open, onClose, initial, onSaved }) => {
             <div key={k} className="space-y-1.5"><Label>{l}</Label>
               <Input type={t || "text"} required={l.includes("*")} value={f[k] || ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="bg-black/30" data-testid={`member-form-${k}`} /></div>
           ))}
+          <div className="sm:col-span-2 flex items-center gap-3">
+            <Switch
+              checked={f.has_food_restriction}
+              onCheckedChange={(v) => setF({ ...f, has_food_restriction: v, food_restriction_details: v ? f.food_restriction_details : "" })}
+              data-testid="member-form-has-food-restriction"
+            />
+            <Label>Possui restrição alimentar?</Label>
+          </div>
+          {f.has_food_restriction && (
+            <div className="sm:col-span-2 space-y-1.5">
+              <Label htmlFor="member-form-food-restriction-details">Qual?</Label>
+              <Textarea
+                id="member-form-food-restriction-details"
+                required
+                maxLength={1000}
+                value={f.food_restriction_details}
+                onChange={(e) => setF({ ...f, food_restriction_details: e.target.value })}
+                className="bg-black/30"
+                data-testid="member-form-food-restriction-details"
+              />
+            </div>
+          )}
           <div className="space-y-1.5"><Label>{initial ? "Nova senha (opcional)" : "Senha *"}</Label>
             <Input type="text" required={!initial} value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className="bg-black/30" data-testid="member-form-password" /></div>
           <div className="space-y-1.5"><Label>Perfil de acesso</Label>

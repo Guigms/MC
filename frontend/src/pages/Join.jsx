@@ -61,6 +61,8 @@ const EMPTY = {
   // Informações de saúde
   has_medication_allergy: null,
   medication_allergy_details: "",
+  has_food_restriction: null,
+  food_restriction_details: "",
 
   // Contato de emergência 1
   emergency_contact_1_name: "",
@@ -271,6 +273,7 @@ export default function Join() {
       f.commit_events,
       f.has_cnh_a,
       f.has_medication_allergy,
+      f.has_food_restriction,
     ].some((value) => value === null);
 
     if (unansweredQuestions) {
@@ -295,6 +298,14 @@ export default function Join() {
       return;
     }
 
+    if (
+      f.has_food_restriction === true &&
+      !f.food_restriction_details.trim()
+    ) {
+      setError("Informe qual é a restrição alimentar.");
+      return;
+    }
+
     // Validação dos contatos de emergência
     if (!validateEmergencyContacts()) {
       setError(
@@ -312,6 +323,10 @@ export default function Join() {
       medication_allergy_details:
         f.has_medication_allergy === true
           ? f.medication_allergy_details.trim()
+          : "",
+      food_restriction_details:
+        f.has_food_restriction === true
+          ? f.food_restriction_details.trim()
           : "",
     };
 
@@ -609,6 +624,38 @@ export default function Join() {
                 f={f}
                 setF={setF}
               />
+
+              <YesNo
+                label="Tem alguma restrição alimentar?"
+                k="has_food_restriction"
+                f={f}
+                setF={setF}
+              />
+
+              {f.has_food_restriction === true && (
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label>
+                    Qual restrição alimentar?
+                    <span className="text-brand"> *</span>
+                  </Label>
+                  <Textarea
+                    required
+                    minLength={3}
+                    maxLength={1000}
+                    rows={3}
+                    value={f.food_restriction_details}
+                    onChange={(e) =>
+                      setF((current) => ({
+                        ...current,
+                        food_restriction_details: e.target.value,
+                      }))
+                    }
+                    placeholder="Informe os alimentos ou ingredientes que deve evitar."
+                    className="bg-black/30"
+                    data-testid="join-food-restriction-details"
+                  />
+                </div>
+              )}
 
               {f.has_medication_allergy === true && (
                 <div className="sm:col-span-2 space-y-1.5">

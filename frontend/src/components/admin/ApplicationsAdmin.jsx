@@ -42,6 +42,8 @@ const Detail = ({ a, onClose, onDone }) => {
           <Row k="Profissão" v={a.profession} /><Row k="Moto própria" v={yn(a.has_motorcycle)} /><Row k="Modelo" v={a.motorcycle_model} />
           <Row k="Pilota há" v={a.riding_since} /><Row k="Frequência" v={a.frequency} /><Row k="Outro grupo" v={yn(a.other_group)} />
           <Row k="Prefere" v={styles} /><Row k="Participa de eventos" v={yn(a.commit_events)} /><Row k="CNH A válida" v={yn(a.has_cnh_a)} />
+          <Row k="Restrição alimentar" v={yn(a.has_food_restriction)} />
+          {a.has_food_restriction && <div className="col-span-2 sm:col-span-3"><Row k="Qual restrição?" v={a.food_restriction_details} /></div>}
         </div>
         <div className="card-metal p-4 mt-2"><div className="font-mono-x text-[10px] uppercase tracking-widest text-brand mb-1">Por que quer entrar</div><p className="text-sm text-zinc-200 whitespace-pre-line" data-testid="application-reason">{a.reason}</p></div>
         {a.note && <p className="text-sm text-zinc-400">Observação: {a.note}</p>}

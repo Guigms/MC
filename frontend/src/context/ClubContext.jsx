@@ -15,7 +15,7 @@ const DEFAULT_CLUB = {
   accent_color: "#ff2a85",
   monthly_fee: 30,
   city: "Fortaleza - CE",
-  contact_email: "[contato@seuclub.com]",
+  contact_email: "[bikergirls.85oficial@gmail.com]",
   contact_phone: "85999588651",
   instagram: "",
   whatsapp: "",

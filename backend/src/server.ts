@@ -232,13 +232,16 @@ const notifyMembersOfNewEvent = async (event: {
 
 app.use(
   cors({
-    origin: [
-      "https://mc-frontend-rho.vercel.app",
-      "http://localhost:3000",
-    ],
+    origin: function (origin, callback) {
+      // Aceita dinamicamente qualquer origem, contornando o bloqueio rigoroso do navegador
+      callback(null, true);
+    },
     credentials: true,
   })
 );
+
+// Essencial para a Vercel: aprova imediatamente as requisições OPTIONS (preflight)
+app.options('*', cors());
 
 app.use(
   "/api/settings/hero-image",

@@ -5,8 +5,21 @@ import { Handshake, Mail, Phone, Instagram, MapPin, MessageCircle } from "lucide
 import { api } from "@/lib/api";
 import { useClub } from "@/context/ClubContext";
 import { Speedometer } from "@/components/moto/Speedometer";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const fade = { initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6 } };
+
+const partnerExamples = [
+  { name: "Parceira Exemplo 01", initials: "P1" },
+  { name: "Parceira Exemplo 02", initials: "P2" },
+  { name: "Parceira Exemplo 03", initials: "P3" },
+];
+
+const memberBusinessExamples = [
+  { name: "Negócio Exemplo 01", member: "Integrante Exemplo 01", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N1" },
+  { name: "Negócio Exemplo 02", member: "Integrante Exemplo 02", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N2" },
+  { name: "Negócio Exemplo 03", member: "Integrante Exemplo 03", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N3" },
+];
 
 export const Marquee = () => {
   const { club } = useClub();
@@ -140,17 +153,60 @@ export const Gallery = () => {
 };
 
 export const Partnerships = () => (
-  <section id="parcerias" className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
-    <motion.div {...fade} className="card-metal p-8 sm:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+  <section id="parcerias" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="partners-section">
+    <motion.div {...fade}>
+      <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Quem fortalece o movimento</span>
+      <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Nossas parceiras</h2>
+      <p className="mt-4 max-w-2xl text-zinc-400">Empresas que apoiam a irmandade, a liberdade e a presença das mulheres na estrada.</p>
+    </motion.div>
+    <Carousel opts={{ align: "start", loop: true }} className="mt-10 px-12" data-testid="partners-carousel">
+      <CarouselContent>
+        {partnerExamples.map((partner, index) => (
+          <CarouselItem key={partner.name} className="basis-[85%] sm:basis-1/2">
+            <div className="card-metal min-h-48 p-6 flex flex-col items-center justify-center gap-4 text-center" data-testid={`partner-card-${index + 1}`}>
+              <div role="img" aria-label={`Logo ilustrativa de ${partner.name}`} className="h-24 w-24 rounded-full border-2 border-brand/50 bg-brand/10 flex items-center justify-center font-display text-3xl font-black text-brand">
+                {partner.initials}
+              </div>
+              <h3 className="font-display text-xl font-bold uppercase text-white">{partner.name}</h3>
+            </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious aria-label="Parceira anterior" className="left-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
+      <CarouselNext aria-label="Próxima parceira" className="right-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
+    </Carousel>
+    <motion.div {...fade} className="card-metal mt-12 p-8 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
       <div className="max-w-2xl">
         <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Parcerias</span>
-        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Empresas que apoiam o movimento</h2>
-        <p className="mt-4 text-zinc-400">Valorizamos quem fortalece a irmandade, a liberdade e a presença das mulheres na estrada. Quer apoiar o club e construir essa parceria com a gente?</p>
+        <h3 className="font-display text-2xl sm:text-3xl font-black uppercase mt-3 leading-none">Quer apoiar o movimento?</h3>
+        <p className="mt-4 text-zinc-400">Vamos construir uma parceria com a gente.</p>
       </div>
       <a href="#contato" className="btn-rev inline-flex items-center justify-center gap-2 px-7 py-3 text-sm shrink-0" data-testid="partnership-contact-link">
         <Handshake size={17} /> Seja uma parceira
       </a>
     </motion.div>
+  </section>
+);
+
+export const MemberBusinesses = () => (
+  <section id="negocios-das-integrantes" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="member-businesses-section">
+    <motion.div {...fade}>
+      <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Empreendedorismo e irmandade</span>
+      <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Negócios das integrantes</h2>
+      <p className="mt-4 max-w-2xl text-zinc-400">Conheça e fortaleça os empreendimentos das mulheres que fazem parte do nosso grupo.</p>
+    </motion.div>
+    <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {memberBusinessExamples.map((business, index) => (
+        <motion.article key={business.name} {...fade} transition={{ duration: 0.6, delay: index * 0.08 }} className="card-metal p-6" data-testid={`member-business-card-${index + 1}`}>
+          <div className="h-16 w-16 rounded-xl border border-brand/40 bg-brand/10 flex items-center justify-center font-display text-xl font-black text-brand" role="img" aria-label={`Logo ilustrativa de ${business.name}`}>
+            {business.initials}
+          </div>
+          <h3 className="font-display text-xl font-bold uppercase text-white mt-5">{business.name}</h3>
+          <p className="font-mono-x text-[10px] uppercase tracking-[0.2em] text-brand mt-1">{business.member}</p>
+          <p className="text-sm text-zinc-400 mt-4">{business.description}</p>
+        </motion.article>
+      ))}
+    </div>
   </section>
 );
 

@@ -1300,7 +1300,7 @@ app.post("/api/applications", async (req: Request, res: Response) => {
 
     return res.status(201).json({
       message: "Inscrição enviada com sucesso!",
-      application,
+      application: applicationFields(application),
     });
   } catch (error) {
     console.error("[Inscrição] Erro ao cadastrar:", error);
@@ -1311,6 +1311,41 @@ app.post("/api/applications", async (req: Request, res: Response) => {
   }
 });
 
+const applicationFields = (application: Prisma.ApplicationGetPayload<{}>) => ({
+  id: application.id,
+  name: application.name,
+  email: application.email,
+  whatsapp: application.whatsapp,
+  age: application.age,
+  height: application.height,
+  blood_type: application.bloodType,
+  city: application.city,
+  profession: application.profession,
+  instagram: application.instagram,
+  has_motorcycle: application.hasMotorcycle,
+  motorcycle_model: application.motorcycleModel,
+  riding_since: application.ridingSince,
+  styles: application.styles,
+  frequency: application.frequency,
+  other_group: application.otherGroup,
+  reason: application.reason,
+  commit_events: application.commitEvents,
+  has_cnh_a: application.hasCnhA,
+  has_medication_allergy: application.hasMedicationAllergy,
+  medication_allergy_details: application.medicationAllergyDetails,
+  has_food_restriction: application.hasFoodRestriction,
+  food_restriction_details: application.foodRestrictionDetails,
+  emergency_contact_1_name: application.emergencyContact1Name,
+  emergency_contact_1_phone: application.emergencyContact1Phone,
+  emergency_contact_1_relationship: application.emergencyContact1Relationship,
+  emergency_contact_2_name: application.emergencyContact2Name,
+  emergency_contact_2_phone: application.emergencyContact2Phone,
+  emergency_contact_2_relationship: application.emergencyContact2Relationship,
+  status: application.status,
+  note: application.note,
+  created_at: application.createdAt,
+});
+
 app.get("/api/applications", async (_req: Request, res: Response) => {
   try {
     const applications = await prisma.application.findMany({
@@ -1319,7 +1354,7 @@ app.get("/api/applications", async (_req: Request, res: Response) => {
       },
     });
 
-    return res.json(applications);
+    return res.json(applications.map(applicationFields));
   } catch (error) {
     console.error("[Inscrição] Erro ao listar:", error);
 
@@ -1339,7 +1374,7 @@ app.get(
         },
       });
 
-      return res.json(applications);
+      return res.json(applications.map(applicationFields));
     } catch (error) {
       console.error("[Admin] Erro ao buscar inscrições:", error);
 

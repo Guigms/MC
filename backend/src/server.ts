@@ -124,6 +124,38 @@ const escapeHtml = (value: string) =>
     "'": "&#39;",
   } as Record<string, string>)[character]);
 
+type SmtpConfiguration = {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  from: string;
+};
+
+const getSmtpConfiguration = (): SmtpConfiguration | null => {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM;
+
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !user || !pass || !from) {
+    return null;
+  }
+
+  return { host, port, user, pass, from };
+};
+
+const createSmtpTransporter = ({ host, port, user, pass }: SmtpConfiguration) =>
+  nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+const hasValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const notifyMembersOfNewEvent = async (event: {
   title: string;
   type: string;
@@ -140,32 +172,20 @@ const notifyMembersOfNewEvent = async (event: {
     return { status: "disabled", total: 0, sent: 0, failed: 0 };
   }
 
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM;
-
-  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !user || !pass || !from) {
+  const smtp = getSmtpConfiguration();
+  if (!smtp) {
     console.error("[Email] Notificações de evento não enviadas: configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM.");
     return { status: "unconfigured", total: 0, sent: 0, failed: 0 };
   }
+  const { from } = smtp;
 
   try {
     const members = await prisma.user.findMany({
       where: { role: "member", active: true },
       select: { email: true, name: true },
     });
-    const recipients = members.filter(
-      (member: { email: string }) =>
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)
-    );
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
+    const recipients = members.filter((member) => hasValidEmail(member.email));
+    const transporter = createSmtpTransporter(smtp);
     const localDateMatch = event.date.match(
       /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
     );
@@ -227,6 +247,62 @@ const notifyMembersOfNewEvent = async (event: {
   } catch (error) {
     console.error("[Email] Erro ao enviar notificações do novo evento:", error);
     return { status: "failed", total: 0, sent: 0, failed: 0 };
+  }
+};
+
+const notifyAdminsOfNewApplication = async (application: {
+  name: string;
+  city: string;
+}) => {
+  if (process.env.APPLICATION_EMAIL_NOTIFICATIONS_ENABLED === "false") return;
+
+  const smtp = getSmtpConfiguration();
+  if (!smtp) {
+    console.error("[Email] Notificação de nova inscrição não enviada: configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM.");
+    return;
+  }
+
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: "admin", active: true },
+      select: { name: true, email: true },
+    });
+    const recipients = admins.filter((admin) => hasValidEmail(admin.email));
+
+    if (recipients.length === 0) {
+      console.error("[Email] Notificação de nova inscrição não enviada: nenhum administrador ativo possui e-mail válido.");
+      return;
+    }
+
+    const transporter = createSmtpTransporter(smtp);
+    const adminUrl = `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/+$/, "")}/admin`;
+    const safeName = escapeHtml(application.name);
+    const safeCity = escapeHtml(application.city);
+    const results = await Promise.allSettled(
+      recipients.map((admin) =>
+        transporter.sendMail({
+          from: smtp.from,
+          to: admin.email,
+          subject: "Nova ficha de inscrição aguardando aprovação",
+          text: [
+            `Olá, ${admin.name}!`,
+            "",
+            `Uma nova ficha de inscrição de ${application.name} está aguardando aprovação.`,
+            `Cidade: ${application.city}`,
+            `Acesse o painel administrativo: ${adminUrl}`,
+          ].join("\n"),
+          html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#242424"><h2>Nova ficha de inscrição</h2><p>Olá, ${escapeHtml(admin.name)}! Uma nova ficha de <strong>${safeName}</strong> está aguardando aprovação.</p><p><strong>Cidade:</strong> ${safeCity}</p><p><a href="${adminUrl}">Acessar painel administrativo</a></p></div>`,
+        })
+      )
+    );
+
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("[Email] Falha ao notificar um administrador sobre nova inscrição:", result.reason);
+      }
+    });
+  } catch (error) {
+    console.error("[Email] Erro ao enviar notificação de nova inscrição:", error);
   }
 };
 
@@ -559,7 +635,7 @@ const defaultClubSettings = {
   accentColor: "#ff2a85",
   monthlyFee: 30,
   city: "Fortaleza - CE",
-  contactEmail: "[bikergirls.85oficial@gmail.com]",
+  contactEmail: "priscilaedupontes@gmail.com",
   contactPhone: "85999588651",
   instagram: "",
   whatsapp: "",
@@ -1296,6 +1372,11 @@ app.post("/api/applications", async (req: Request, res: Response) => {
         status: "pending",
         note: "",
       },
+    });
+
+    await notifyAdminsOfNewApplication({
+      name: application.name,
+      city: application.city,
     });
 
     return res.status(201).json({

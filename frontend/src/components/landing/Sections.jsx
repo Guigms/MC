@@ -10,16 +10,36 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 const fade = { initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6 } };
 
 const partnerExamples = [
-  { name: "Parceira Exemplo 01", initials: "P1" },
-  { name: "Parceira Exemplo 02", initials: "P2" },
-  { name: "Parceira Exemplo 03", initials: "P3" },
+  { name: "SGroup Nacional", logo: "/partners/s-group.jpeg", whatsapp: "85992772059" },
+  { name: "Star Motos Car", logo: "/partners/star-motos-car.png", whatsapp: "8533937457" },
+  { name: "Torquato Pneus", logo: "/partners/torquato-pneus.png", whatsapp: "85986056620" },
 ];
 
 const memberBusinessExamples = [
-  { name: "Negócio Exemplo 01", member: "Integrante Exemplo 01", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N1" },
-  { name: "Negócio Exemplo 02", member: "Integrante Exemplo 02", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N2" },
-  { name: "Negócio Exemplo 03", member: "Integrante Exemplo 03", description: "Descrição ilustrativa do empreendimento da integrante.", initials: "N3" },
+  { name: "Studio Anny Martins", logo: "/businesses/studio-anny-martins.jpeg", whatsapp: "85989923059" },
+  { name: "Panos de Prato e Tapetes de Retalhos", logo: "/businesses/panos-e-tapetes.jpeg", whatsapp: "85987804931" },
+  { name: "Priscila Pontes · Video Maker", logo: "/businesses/priscila-pontes.jpeg", whatsapp: "85999588651" },
+  { name: "Ateliê Laços da Lary", logo: "/businesses/atelie-lacos-da-lary.jpeg", whatsapp: "85992337984" },
+  { name: "Driely Costa · Salão de Beleza", logo: "/businesses/driely-costa.jpeg", whatsapp: "8598384401" },
+  { name: "Beach Park Suites", logo: "/businesses/beach-park-suites.jpeg", whatsapp: "85991116903" },
+  { name: "Amanda Chaves · Personal Trainer", logo: "/businesses/amanda-chaves-personal-trainer.jpeg", whatsapp: "85989906754" },
+  { name: "Decore com Criatividade", logo: "/businesses/decore-com-criatividade.jpeg", whatsapp: "85991928371" },
+  { name: "Control Z 3D", logo: "/businesses/control-z-3d.jpeg", whatsapp: "85998363348" },
 ];
+
+const clubRidePhotos = [
+  { src: "/gallery/motoclube-1.png", alt: "Integrante do motoclube em sua motocicleta durante um passeio noturno" },
+  { src: "/gallery/motoclube-2.png", alt: "Integrante do motoclube pilotando na estrada" },
+  { src: "/gallery/motoclube-3.jpeg", alt: "Integrante do motoclube em sua motocicleta" },
+  { src: "/gallery/motoclube-4.jpeg", alt: "Integrantes do motoclube reunidas em um passeio de estrada" },
+  { src: "/gallery/motoclube-5.jpeg", alt: "Integrante do motoclube pilotando sua motocicleta" },
+];
+
+const whatsappUrl = (club, message, contactPhone) => {
+  const phone = (contactPhone || club.whatsapp || "").replace(/\D/g, "");
+  const internationalPhone = phone && !phone.startsWith("55") ? `55${phone}` : phone;
+  return `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`;
+};
 
 export const Marquee = () => {
   const { club } = useClub();
@@ -112,7 +132,12 @@ const getVideoSource = (src) => {
 
 export const Gallery = () => {
   const { club } = useClub();
-  const media = (club.gallery || []).filter(Boolean);
+  const media = [
+    ...clubRidePhotos,
+    ...(club.gallery || [])
+      .filter((src) => src && !clubRidePhotos.some((photo) => photo.src === src))
+      .map((src) => ({ src, alt: "Registro do motoclube" })),
+  ].slice(0, 9);
 
   return (
     <section id="galeria" className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
@@ -123,7 +148,7 @@ export const Gallery = () => {
       </motion.div>
       {media.length > 0 && (
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[260px] sm:auto-rows-[340px] gap-3 sm:gap-4">
-        {media.slice(0, 9).map((src, i) => {
+        {media.map(({ src, alt }, i) => {
           const video = getVideoSource(src);
           return (
           <motion.div key={src + i} {...fade} transition={{ duration: 0.6, delay: i * 0.08 }} className={`group relative overflow-hidden rounded-xl border border-white/10 ${i % 2 ? "lg:translate-y-10" : ""}`} data-testid={`gallery-item-${i}`}>
@@ -140,7 +165,7 @@ export const Gallery = () => {
             ) : video?.type === "video" ? (
               <video src={video.src} controls preload="metadata" className="h-full w-full object-cover" data-testid={`gallery-video-${i}`} />
             ) : (
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover object-top grayscale-[60%] group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
+              <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover object-top grayscale-[60%] group-hover:grayscale-0 group-hover:scale-110 transition-[transform,filter] duration-700" />
             )}
             {video ? null : <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0b0c10]/80 to-transparent opacity-80 group-hover:opacity-30 transition-opacity duration-500" />}
           </motion.div>
@@ -152,63 +177,82 @@ export const Gallery = () => {
   );
 };
 
-export const Partnerships = () => (
-  <section id="parcerias" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="partners-section">
-    <motion.div {...fade}>
-      <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Quem fortalece o movimento</span>
-      <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Nossas parceiras</h2>
-      <p className="mt-4 max-w-2xl text-zinc-400">Empresas que apoiam a irmandade, a liberdade e a presença das mulheres na estrada.</p>
-    </motion.div>
-    <Carousel opts={{ align: "start", loop: true }} className="mt-10 px-12" data-testid="partners-carousel">
-      <CarouselContent>
-        {partnerExamples.map((partner, index) => (
-          <CarouselItem key={partner.name} className="basis-[85%] sm:basis-1/2">
-            <div className="card-metal min-h-48 p-6 flex flex-col items-center justify-center gap-4 text-center" data-testid={`partner-card-${index + 1}`}>
-              <div role="img" aria-label={`Logo ilustrativa de ${partner.name}`} className="h-24 w-24 rounded-full border-2 border-brand/50 bg-brand/10 flex items-center justify-center font-display text-3xl font-black text-brand">
-                {partner.initials}
-              </div>
-              <h3 className="font-display text-xl font-bold uppercase text-white">{partner.name}</h3>
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious aria-label="Parceira anterior" className="left-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
-      <CarouselNext aria-label="Próxima parceira" className="right-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
-    </Carousel>
-    <motion.div {...fade} className="card-metal mt-12 p-8 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-      <div className="max-w-2xl">
-        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Parcerias</span>
-        <h3 className="font-display text-2xl sm:text-3xl font-black uppercase mt-3 leading-none">Quer apoiar o movimento?</h3>
-        <p className="mt-4 text-zinc-400">Vamos construir uma parceria com a gente.</p>
-      </div>
-      <a href="#contato" className="btn-rev inline-flex items-center justify-center gap-2 px-7 py-3 text-sm shrink-0" data-testid="partnership-contact-link">
-        <Handshake size={17} /> Seja uma parceira
-      </a>
-    </motion.div>
-  </section>
-);
+export const Partnerships = () => {
+  const { club } = useClub();
+  return (
+    <section id="parcerias" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="partners-section">
+      <motion.div {...fade}>
+        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Quem fortalece o movimento</span>
+        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Nossas parceiras</h2>
+        <p className="mt-4 max-w-2xl text-zinc-400">Empresas que apoiam a irmandade, a liberdade e a presença das mulheres na estrada.</p>
+      </motion.div>
+      <Carousel opts={{ align: "start", loop: true }} className="mt-10 px-12" data-testid="partners-carousel">
+        <CarouselContent>
+          {partnerExamples.map((partner, index) => (
+            <CarouselItem key={partner.name} className="basis-[85%] sm:basis-1/2 lg:basis-1/3">
+              <a
+                href={whatsappUrl(club, `Olá! Gostaria de saber mais sobre a parceria com ${partner.name}.`, partner.whatsapp)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Falar no WhatsApp sobre ${partner.name}`}
+                className="card-metal hoverable min-h-48 p-6 flex flex-col items-center justify-center gap-4 text-center"
+                data-testid={`partner-card-${index + 1}`}
+              >
+                <img src={partner.logo} alt={`Logo de ${partner.name}`} loading="lazy" className="h-28 w-full object-contain" />
+                <h3 className="font-display text-xl font-bold uppercase text-white">{partner.name}</h3>
+                <span className="inline-flex items-center gap-2 text-sm text-brand"><MessageCircle size={16} /> Falar no WhatsApp</span>
+              </a>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious aria-label="Parceira anterior" className="left-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
+        <CarouselNext aria-label="Próxima parceira" className="right-0 border-white/10 bg-[#12141c] text-white hover:bg-brand" />
+      </Carousel>
+      <motion.div {...fade} className="card-metal mt-12 p-8 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="max-w-2xl">
+          <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Parcerias</span>
+          <h3 className="font-display text-2xl sm:text-3xl font-black uppercase mt-3 leading-none">Quer apoiar o movimento?</h3>
+          <p className="mt-4 text-zinc-400">Vamos construir uma parceria com a gente.</p>
+        </div>
+        <a href="#contato" className="btn-rev inline-flex items-center justify-center gap-2 px-7 py-3 text-sm shrink-0" data-testid="partnership-contact-link">
+          <Handshake size={17} /> Seja uma parceira
+        </a>
+      </motion.div>
+    </section>
+  );
+};
 
-export const MemberBusinesses = () => (
-  <section id="negocios-das-integrantes" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="member-businesses-section">
-    <motion.div {...fade}>
-      <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Empreendedorismo e irmandade</span>
-      <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Negócios das integrantes</h2>
-      <p className="mt-4 max-w-2xl text-zinc-400">Conheça e fortaleça os empreendimentos das mulheres que fazem parte do nosso grupo.</p>
-    </motion.div>
-    <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {memberBusinessExamples.map((business, index) => (
-        <motion.article key={business.name} {...fade} transition={{ duration: 0.6, delay: index * 0.08 }} className="card-metal p-6" data-testid={`member-business-card-${index + 1}`}>
-          <div className="h-16 w-16 rounded-xl border border-brand/40 bg-brand/10 flex items-center justify-center font-display text-xl font-black text-brand" role="img" aria-label={`Logo ilustrativa de ${business.name}`}>
-            {business.initials}
-          </div>
-          <h3 className="font-display text-xl font-bold uppercase text-white mt-5">{business.name}</h3>
-          <p className="font-mono-x text-[10px] uppercase tracking-[0.2em] text-brand mt-1">{business.member}</p>
-          <p className="text-sm text-zinc-400 mt-4">{business.description}</p>
-        </motion.article>
-      ))}
-    </div>
-  </section>
-);
+export const MemberBusinesses = () => {
+  const { club } = useClub();
+  return (
+    <section id="negocios-das-integrantes" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="member-businesses-section">
+      <motion.div {...fade}>
+        <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Empreendedorismo e irmandade</span>
+        <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Negócios das integrantes</h2>
+        <p className="mt-4 max-w-2xl text-zinc-400">Conheça e fortaleça os empreendimentos das mulheres que fazem parte do nosso grupo.</p>
+      </motion.div>
+      <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {memberBusinessExamples.map((business, index) => (
+          <motion.a
+            key={business.name}
+            {...fade}
+            transition={{ duration: 0.6, delay: index * 0.08 }}
+            href={whatsappUrl(club, `Olá! Vi ${business.name} na página do motoclube e gostaria de saber mais sobre o empreendimento.`, business.whatsapp)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Falar no WhatsApp sobre ${business.name}`}
+            className="card-metal hoverable p-6"
+            data-testid={`member-business-card-${index + 1}`}
+          >
+            <img src={business.logo} alt={`Logo de ${business.name}`} loading="lazy" className="h-44 w-full rounded-lg bg-white object-contain p-2" />
+            <h3 className="font-display text-xl font-bold uppercase text-white mt-5">{business.name}</h3>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm text-brand"><MessageCircle size={16} /> Falar no WhatsApp</span>
+          </motion.a>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const ContactItem = ({ icon: Icon, label, value, href, testId }) =>
   value ? (

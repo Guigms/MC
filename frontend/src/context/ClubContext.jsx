@@ -19,7 +19,7 @@ const DEFAULT_CLUB = {
   contact_phone: "85999588651",
   instagram: "",
   whatsapp: "",
-  gallery: ["/gallery/foto1.png", "/gallery/foto2.png", "/gallery/foto3.png", "/gallery/foto4.png"],
+  gallery: ["/gallery/foto1.png"],
 };
 
 const hexToRgb = (hex) => {

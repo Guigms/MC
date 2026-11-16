@@ -24,3 +24,7 @@ Quando estiver pronto para ativar os avisos, configure o SMTP no `backend/.env`:
 - `SMTP_FROM`: endereço remetente autorizado pelo provedor (por exemplo, `Biker Girls 85 <eventos@seudominio.com>`).
 
 Depois de ativar, reinicie o backend. Falhas de envio serão indicadas no painel e registradas no log do backend.
+
+## Credenciais após aprovação de cadastro
+
+Ao aprovar uma inscrição, o sistema envia para o e-mail informado o login (o próprio e-mail) e a senha provisória gerada para a nova conta. Esse envio requer as configurações SMTP acima, mas não depende de `EMAIL_NOTIFICATIONS_ENABLED`. Se o SMTP não estiver configurado ou o envio falhar, o painel informa que o e-mail não foi enviado e mantém as credenciais disponíveis para compartilhamento manual.

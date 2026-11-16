@@ -306,6 +306,47 @@ const notifyAdminsOfNewApplication = async (application: {
   }
 };
 
+type ApprovalEmailStatus = "sent" | "failed" | "unconfigured";
+
+const sendApplicationApprovalEmail = async (credentials: {
+  name: string;
+  email: string;
+  tempPassword: string;
+}): Promise<ApprovalEmailStatus> => {
+  const smtp = getSmtpConfiguration();
+  if (!smtp) {
+    console.error("[Email] Credenciais de cadastro não enviadas: configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM.");
+    return "unconfigured";
+  }
+
+  const loginUrl = `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/+$/, "")}/login`;
+
+  try {
+    await createSmtpTransporter(smtp).sendMail({
+      from: smtp.from,
+      to: credentials.email,
+      subject: "Seu cadastro foi aprovado",
+      text: [
+        `Olá, ${credentials.name}!`,
+        "",
+        "Seu cadastro foi aprovado e sua conta já está ativa.",
+        `Login: ${credentials.email}`,
+        `Senha provisória: ${credentials.tempPassword}`,
+        `Acesse para entrar: ${loginUrl}`,
+      ].join("\n"),
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#242424"><h2>Cadastro aprovado!</h2><p>Olá, ${escapeHtml(credentials.name)}! Seu cadastro foi aprovado e sua conta já está ativa.</p><p><strong>Login:</strong> ${escapeHtml(credentials.email)}<br><strong>Senha provisória:</strong> ${escapeHtml(credentials.tempPassword)}</p><p><a href="${escapeHtml(loginUrl)}">Acessar o login</a></p></div>`,
+    });
+
+    return "sent";
+  } catch (error) {
+    console.error(
+      `[Email] Falha ao enviar credenciais de acesso para ${credentials.email}:`,
+      error
+    );
+    return "failed";
+  }
+};
+
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -1463,6 +1504,7 @@ app.get(
 
 app.post(
   "/api/applications/:id/approve",
+  requireAdmin,
   async (req: Request, res: Response) => {
     try {
       const id = String(req.params.id);
@@ -1538,10 +1580,17 @@ app.post(
         return user;
       });
 
+      const emailStatus = await sendApplicationApprovalEmail({
+        name: result.name,
+        email: result.email,
+        tempPassword,
+      });
+
       return res.status(200).json({
         message: "Inscrição aprovada e conta criada com sucesso.",
         email: result.email,
         temp_password: tempPassword,
+        email_status: emailStatus,
       });
     } catch (error: any) {
       console.error("[Admin] Erro ao aprovar inscrição:", error);

@@ -22,7 +22,16 @@ const Detail = ({ a, onClose, onDone }) => {
   if (!a) return null;
 
   const approve = async () => {
-    try { const { data } = await api.post(`/applications/${a.id}/approve`); setCred(data); toast.success("Inscrição aprovada e conta criada"); onDone(); }
+    try {
+      const { data } = await api.post(`/applications/${a.id}/approve`);
+      setCred(data);
+      if (data.email_status === "sent") {
+        toast.success("Inscrição aprovada; credenciais enviadas por e-mail");
+      } else {
+        toast.warning("Conta criada, mas o e-mail não foi enviado. Confira a configuração SMTP.");
+      }
+      onDone();
+    }
     catch (e) { toast.error(errMsg(e)); }
   };
   const reject = async () => {
@@ -66,7 +75,11 @@ const Detail = ({ a, onClose, onDone }) => {
         {a.note && <p className="text-sm text-zinc-400">Observação: {a.note}</p>}
         {cred && (
           <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4" data-testid="application-credentials">
-            <p className="text-sm text-green-300 font-semibold">Conta criada! Envie estes dados para a nova membro:</p>
+            <p className="text-sm text-green-300 font-semibold">
+              {cred.email_status === "sent"
+                ? "Conta criada! Login e senha provisória enviados para o e-mail informado."
+                : "Conta criada, mas não foi possível enviar o e-mail. Compartilhe estes dados manualmente:"}
+            </p>
             <p className="font-mono-x text-sm mt-2">Login: {cred.email}</p>
             <p className="font-mono-x text-sm">Senha provisória: <b data-testid="application-temp-password">{cred.temp_password}</b></p>
             <button onClick={copy} className="btn-ghost-metal px-4 py-1.5 text-xs mt-3 flex items-center gap-2" data-testid="application-copy-credentials"><Copy size={13} /> Copiar</button>

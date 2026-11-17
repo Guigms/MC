@@ -33,6 +33,8 @@ const clubRidePhotos = [
   { src: "/gallery/motoclube-3.jpeg", alt: "Integrante do motoclube em sua motocicleta" },
   { src: "/gallery/motoclube-4.jpeg", alt: "Integrantes do motoclube reunidas em um passeio de estrada" },
   { src: "/gallery/motoclube-5.jpeg", alt: "Integrante do motoclube pilotando sua motocicleta" },
+  { src: "/gallery/passeio-estrada-1.jpeg", alt: "Integrantes do motoclube em passeio por uma estrada" },
+  { src: "/gallery/passeio-estrada-2.jpeg", alt: "Grupo de motociclistas reunido durante um passeio" },
 ];
 
 const whatsappUrl = (club, message, contactPhone) => {

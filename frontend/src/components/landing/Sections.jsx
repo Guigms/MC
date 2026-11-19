@@ -64,7 +64,9 @@ export const About = () => {
   const [stats, setStats] = useState({ members: 0, events_year: 0, upcoming: 0 });
   const aboutParagraphs = (club.about_text || "").split(/\n\s*\n/);
   useEffect(() => {
-    api.get("/public/stats").then((r) => setStats(r.data)).catch(() => {});
+    api.get("/public/stats").then((r) => setStats(r.data)).catch((error) => {
+      console.error("Não foi possível carregar os contadores públicos.", error);
+    });
   }, []);
   return (
     <section id="sobre" className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32 grid lg:grid-cols-2 gap-16 items-center">
@@ -97,6 +99,33 @@ export const About = () => {
     </section>
   );
 };
+
+export const Leadership = () => (
+  <section id="diretoria" className="max-w-7xl mx-auto px-4 sm:px-6 py-24" data-testid="leadership-section">
+    <motion.div {...fade}>
+      <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Quem conduz nossa irmandade</span>
+      <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Nossa diretoria</h2>
+      <p className="mt-4 max-w-2xl text-zinc-400">Mulheres que representam, cuidam e fortalecem o caminho do Biker Girls.</p>
+    </motion.div>
+    <div className="mt-10 grid lg:grid-cols-3 gap-5">
+      <motion.article {...fade} className="card-metal hoverable overflow-hidden" data-testid="leadership-president">
+        <img src="/diretoria/priscila-pontes.jpeg" alt="Priscila Pontes, presidente do Biker Girls" loading="lazy" className="w-full aspect-[4/5] object-cover object-top" />
+        <div className="p-5">
+          <span className="font-mono-x text-[10px] uppercase tracking-[0.25em] text-brand">Presidente</span>
+          <h3 className="font-display text-2xl font-bold uppercase mt-1">Priscila Pontes</h3>
+        </div>
+      </motion.article>
+      <motion.article {...fade} transition={{ ...fade.transition, delay: 0.1 }} className="card-metal hoverable overflow-hidden lg:col-span-2" data-testid="leadership-directors">
+        <img src="/diretoria/diretoras.jpeg" alt="Diretoras do Biker Girls ao lado da presidente Priscila Pontes" loading="lazy" className="w-full aspect-[4/5] sm:aspect-[3/2] object-cover object-center" />
+        <div className="p-5">
+          <span className="font-mono-x text-[10px] uppercase tracking-[0.25em] text-brand">Diretoria</span>
+          <h3 className="font-display text-2xl font-bold uppercase mt-1">As diretoras</h3>
+          <p className="text-sm text-zinc-400 mt-2">Juntas, trabalhando pelo presente e pelo futuro do nosso motogrupo.</p>
+        </div>
+      </motion.article>
+    </div>
+  </section>
+);
 
 const StoreProduct = ({ product, onAdd }) => {
   const [size, setSize] = useState("");

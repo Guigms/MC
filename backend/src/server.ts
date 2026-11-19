@@ -168,7 +168,7 @@ const notifyMembersOfNewEvent = async (event: {
   sent: number;
   failed: number;
 }> => {
-  if (process.env.EMAIL_NOTIFICATIONS_ENABLED !== "true") {
+  if (process.env.EMAIL_NOTIFICATIONS_ENABLED === "false") {
     return { status: "disabled", total: 0, sent: 0, failed: 0 };
   }
 
@@ -852,19 +852,32 @@ app.get("/api/public/stats", async (_req: Request, res: Response) => {
     const membersCount = await prisma.user.count({
       where: { active: true },
     });
+    const events = await prisma.event.findMany({
+      select: { date: true },
+    });
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const eventCounts = events.reduce(
+      (counts, event) => {
+        const eventDate = new Date(event.date);
+        if (Number.isNaN(eventDate.getTime())) return counts;
+
+        if (eventDate > now) counts.upcoming += 1;
+        else if (eventDate.getFullYear() === currentYear) counts.eventsYear += 1;
+        return counts;
+      },
+      { eventsYear: 0, upcoming: 0 }
+    );
 
     return res.json({
       members: membersCount,
-      events: 0,
-      rides: 0,
+      events_year: eventCounts.eventsYear,
+      upcoming: eventCounts.upcoming,
     });
   } catch (error) {
-    console.error("[Stats] Erro:", error);
-
-    return res.json({
-      members: 0,
-      events: 0,
-      rides: 0,
+    console.error("[Stats] Erro ao carregar estatísticas públicas:", error);
+    return res.status(500).json({
+      message: "Não foi possível carregar as estatísticas públicas.",
     });
   }
 });

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Handshake, Mail, Phone, Instagram, MapPin, MessageCircle } from "lucide-react";
+import { Handshake, Mail, Phone, Instagram, MapPin, MessageCircle, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useClub } from "@/context/ClubContext";
 import { Speedometer } from "@/components/moto/Speedometer";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { toast } from "sonner";
 
 const fade = { initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6 } };
 
@@ -93,6 +94,110 @@ export const About = () => {
         <Speedometer value={stats.events_year} max={Math.max(24, stats.events_year)} label="Rolês no ano" testId="stat-events-year" size={150} />
         <Speedometer value={stats.upcoming} max={Math.max(10, stats.upcoming)} label="Próximos" testId="stat-upcoming" size={150} />
       </motion.div>
+    </section>
+  );
+};
+
+const StoreProduct = ({ product, onAdd }) => {
+  const [size, setSize] = useState("");
+  const [amount, setAmount] = useState(1);
+
+  const add = () => {
+    if (product.sizes?.length > 0 && !size) {
+      toast.error("Escolha um tamanho antes de adicionar.");
+      return;
+    }
+    onAdd({ product, size, quantity: amount });
+    setAmount(1);
+  };
+
+  return (
+    <motion.article {...fade} className="card-metal hoverable overflow-hidden flex flex-col" data-testid={`store-product-${product.id}`}>
+      <div className="aspect-[4/3] bg-black/40 flex items-center justify-center">
+        {product.image_url ? <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-cover" /> : <ShoppingBag className="text-zinc-600" size={44} />}
+      </div>
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-display text-xl font-bold uppercase leading-tight">{product.name}</h3>
+          <span className="text-brand font-semibold whitespace-nowrap">{product.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+        </div>
+        {product.description && <p className="text-sm text-zinc-400 mt-2">{product.description}</p>}
+        {product.sizes?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-4">
+            {product.sizes.map((item) => <button key={item} onClick={() => setSize(item)} className={`min-w-10 px-3 py-1 text-xs ${size === item ? "btn-rev" : "btn-ghost-metal"}`} data-testid={`store-size-${product.id}-${item}`}>{item}</button>)}
+          </div>
+        )}
+        <div className="mt-auto pt-5 flex items-center gap-3">
+          <div className="flex items-center rounded-full border border-white/15">
+            <button onClick={() => setAmount(Math.max(1, amount - 1))} className="p-2 text-zinc-300 hover:text-white" aria-label="Diminuir quantidade"><Minus size={14} /></button>
+            <span className="w-7 text-center font-display font-bold">{amount}</span>
+            <button onClick={() => setAmount(Math.min(50, amount + 1))} className="p-2 text-zinc-300 hover:text-white" aria-label="Aumentar quantidade"><Plus size={14} /></button>
+          </div>
+          <button onClick={add} className="btn-rev px-4 py-2 text-xs flex-1" data-testid={`store-add-${product.id}`}>Adicionar</button>
+        </div>
+      </div>
+    </motion.article>
+  );
+};
+
+export const Store = () => {
+  const { club } = useClub();
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+
+  useEffect(() => {
+    api.get("/products")
+      .then(({ data }) => setProducts(data.filter((product) => product.active)))
+      .catch(() => toast.error("Não foi possível carregar a loja agora."));
+  }, []);
+
+  const addToCart = ({ product, size, quantity }) => {
+    setCart((current) => {
+      const index = current.findIndex((item) => item.product.id === product.id && item.size === size);
+      if (index < 0) return [...current, { product, size, quantity }];
+      return current.map((item, itemIndex) => itemIndex === index
+        ? { ...item, quantity: Math.min(50, item.quantity + quantity) }
+        : item);
+    });
+    toast.success(`${product.name} adicionado ao carrinho.`);
+  };
+
+  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const checkout = () => {
+    const phone = (club.whatsapp || club.contact_phone || "").replace(/\D/g, "");
+    if (!phone) {
+      toast.error("O WhatsApp da loja ainda não foi configurado.");
+      return;
+    }
+    const internationalPhone = phone.startsWith("55") ? phone : `55${phone}`;
+    const lines = cart.map((item) => `- ${item.quantity}x ${item.product.name}${item.size ? ` (${item.size})` : ""}`);
+    const message = `Olá! Gostaria de fazer um pedido na Loja Biker Girls:\n${lines.join("\n")}\n\nTotal estimado: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`;
+    window.open(`https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <section id="loja" className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-24 min-h-screen" data-testid="store-section">
+      <motion.div {...fade} className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+        <div>
+          <span className="font-mono-x text-xs uppercase tracking-[0.3em] text-brand">// Loja Biker Girls</span>
+          <h2 className="font-display text-4xl sm:text-5xl font-black uppercase mt-3 leading-none">Vista a irmandade</h2>
+          <p className="mt-4 max-w-2xl text-zinc-400">Escolha seus produtos, monte o pedido e finalize direto pelo WhatsApp.</p>
+        </div>
+        {cart.length > 0 && <div className="card-metal p-4 sm:min-w-72" data-testid="store-cart">
+          <div className="flex items-center justify-between gap-4">
+            <span className="font-display uppercase font-bold">Seu pedido</span>
+            <span className="text-brand font-semibold">{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+          </div>
+          <div className="mt-3 space-y-2 text-sm text-zinc-300">
+            {cart.map((item) => <div key={`${item.product.id}-${item.size}`} className="flex items-center justify-between gap-3">
+              <span>{item.quantity}x {item.product.name}{item.size ? ` · ${item.size}` : ""}</span>
+              <button onClick={() => setCart((current) => current.filter((entry) => entry !== item))} className="text-zinc-500 hover:text-red-400" aria-label={`Remover ${item.product.name}`}><Trash2 size={14} /></button>
+            </div>)}
+          </div>
+          <button onClick={checkout} className="btn-rev w-full py-2.5 mt-4 text-sm flex items-center justify-center gap-2" data-testid="store-checkout"><MessageCircle size={16} /> Finalizar no WhatsApp</button>
+        </div>}
+      </motion.div>
+      {products.length > 0 ? <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{products.map((product) => <StoreProduct key={product.id} product={product} onAdd={addToCart} />)}</div> : <p className="mt-10 text-zinc-500 text-sm">Novidades em breve. Acompanhe a loja!</p>}
     </section>
   );
 };

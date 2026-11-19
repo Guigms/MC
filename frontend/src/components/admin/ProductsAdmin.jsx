@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { api, errMsg, fmtMoney } from "@/lib/api";
 import { resizeImage } from "@/components/admin/ClubSettings";
 
-const EMPTY = { name: "", description: "", image_url: "", price: "", sizes: "P, M, G, GG", deadline: "", active: true };
+const EMPTY = { name: "", description: "", image_url: "", price: "", sizes: "", deadline: "", active: true };
 
 const ProductDialog = ({ open, onClose, initial, onSaved }) => {
   const [f, setF] = useState(EMPTY);
@@ -45,7 +45,7 @@ const ProductDialog = ({ open, onClose, initial, onSaved }) => {
             <Input type="number" min="0" step="0.01" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} className="bg-black/30" data-testid="product-form-price" /></div>
           <div className="space-y-1.5"><Label>Prazo para responder</Label>
             <Input type="date" value={f.deadline} onChange={(e) => setF({ ...f, deadline: e.target.value })} className="bg-black/30" data-testid="product-form-deadline" /></div>
-          <div className="sm:col-span-2 space-y-1.5"><Label>Tamanhos (separados por vírgula, deixe vazio se for tamanho único)</Label>
+          <div className="sm:col-span-2 space-y-1.5"><Label>Opções ou tamanhos (separados por vírgula, opcional)</Label>
             <Input value={f.sizes} onChange={(e) => setF({ ...f, sizes: e.target.value })} className="bg-black/30" data-testid="product-form-sizes" /></div>
           <div className="sm:col-span-2 space-y-1.5"><Label>Descrição</Label>
             <Textarea rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} className="bg-black/30" data-testid="product-form-description" /></div>
@@ -56,7 +56,7 @@ const ProductDialog = ({ open, onClose, initial, onSaved }) => {
               <input type="file" accept="image/*" onChange={onImg} className="hidden" data-testid="product-form-image" />
             </label>
           </div>
-          <div className="flex items-center gap-3"><Switch checked={f.active} onCheckedChange={(v) => setF({ ...f, active: v })} data-testid="product-form-active" /><Label>Visível para membros</Label></div>
+          <div className="flex items-center gap-3"><Switch checked={f.active} onCheckedChange={(v) => setF({ ...f, active: v })} data-testid="product-form-active" /><Label>Visível na loja</Label></div>
           <div className="sm:col-span-2 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-ghost-metal px-6 py-2 text-sm" data-testid="product-form-cancel">Cancelar</button>
             <button className="btn-rev px-6 py-2 text-sm" data-testid="product-form-submit">Salvar</button>
@@ -127,7 +127,7 @@ export const ProductsAdmin = () => {
   return (
     <div className="space-y-5" data-testid="admin-products">
       <div className="flex justify-between items-center gap-3">
-        <p className="text-sm text-zinc-400">Publique blusas, patches e acessórios para os membros dizerem se querem.</p>
+        <p className="text-sm text-zinc-400">Publique blusas, patches e acessórios no catálogo público da loja.</p>
         <button onClick={() => { setEdit(null); setOpen(true); }} className="btn-rev px-5 py-2 text-sm flex items-center gap-2 whitespace-nowrap" data-testid="products-add-button"><Plus size={16} /> Novo produto</button>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">

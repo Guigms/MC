@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useClub } from "@/context/ClubContext";
 
-const links = [["sobre", "Quem somos"], ["galeria", "Nossas histórias"], ["parcerias", "Parceiros"], ["negocios-das-integrantes", "Negócios das integrantes"], ["contato", "Contato"]];
+const links = [["sobre", "Quem somos"], ["/loja", "Loja Biker Girls"], ["galeria", "Nossas histórias"], ["parcerias", "Parceiros"], ["negocios-das-integrantes", "Negócios das integrantes"], ["contato", "Contato"]];
 
 export const PublicNav = () => {
   const { club } = useClub();
@@ -27,7 +27,8 @@ export const PublicNav = () => {
         </a>
         <nav className="hidden lg:flex items-center gap-2">
           {links.map(([id, l]) => (
-            <a key={id} href={`#${id}`} className="exhaust px-3 py-2 text-sm text-zinc-300 hover:text-white transition-colors" data-testid={`public-nav-${id}`}>{l}</a>
+            id.startsWith("/") ? <Link key={id} to={id} className="exhaust px-3 py-2 text-sm text-zinc-300 hover:text-white transition-colors" data-testid="public-nav-store">{l}</Link>
+              : <a key={id} href={`#${id}`} className="exhaust px-3 py-2 text-sm text-zinc-300 hover:text-white transition-colors" data-testid={`public-nav-${id}`}>{l}</a>
           ))}
         </nav>
         <div className="flex items-center gap-2">
@@ -40,7 +41,8 @@ export const PublicNav = () => {
       {open && (
         <nav className="lg:hidden bg-[#0b0c10]/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex flex-col" data-testid="public-nav-mobile-menu">
           {links.map(([id, l]) => (
-            <a key={id} href={`#${id}`} onClick={() => setOpen(false)} className="py-3 font-display text-xl uppercase font-bold text-zinc-200 border-b border-white/5" data-testid={`public-nav-mobile-${id}`}>{l}</a>
+            id.startsWith("/") ? <Link key={id} to={id} onClick={() => setOpen(false)} className="py-3 font-display text-xl uppercase font-bold text-zinc-200 border-b border-white/5" data-testid="public-nav-mobile-store">{l}</Link>
+              : <a key={id} href={`#${id}`} onClick={() => setOpen(false)} className="py-3 font-display text-xl uppercase font-bold text-zinc-200 border-b border-white/5" data-testid={`public-nav-mobile-${id}`}>{l}</a>
           ))}
         </nav>
       )}

@@ -38,11 +38,6 @@ type ProductResponseItem = {
   quantity: number;
 };
 
-type EventEmailRecipient = {
-  email: string;
-  name: string;
-};
-
 type ActiveMemberSummary = {
   joinedAt: Date;
 };
@@ -155,100 +150,6 @@ const createSmtpTransporter = ({ host, port, user, pass }: SmtpConfiguration) =>
   });
 
 const hasValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-const notifyMembersOfNewEvent = async (event: {
-  title: string;
-  type: string;
-  date: string;
-  location: string;
-  description: string;
-}): Promise<{
-  status: "disabled" | "sent" | "partial" | "failed" | "unconfigured";
-  total: number;
-  sent: number;
-  failed: number;
-}> => {
-  if (process.env.EMAIL_NOTIFICATIONS_ENABLED === "false") {
-    return { status: "disabled", total: 0, sent: 0, failed: 0 };
-  }
-
-  const smtp = getSmtpConfiguration();
-  if (!smtp) {
-    console.error("[Email] Notificações de evento não enviadas: configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM.");
-    return { status: "unconfigured", total: 0, sent: 0, failed: 0 };
-  }
-  const { from } = smtp;
-
-  try {
-    const members = await prisma.user.findMany({
-      where: { role: "member", active: true },
-      select: { email: true, name: true },
-    });
-    const recipients = members.filter((member) => hasValidEmail(member.email));
-    const transporter = createSmtpTransporter(smtp);
-    const localDateMatch = event.date.match(
-      /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
-    );
-    const date = new Date(event.date);
-    const formattedDate = localDateMatch
-      ? `${localDateMatch[3]}/${localDateMatch[2]}/${localDateMatch[1]} às ${localDateMatch[4]}:${localDateMatch[5]}`
-      : Number.isNaN(date.getTime())
-        ? event.date
-        : new Intl.DateTimeFormat("pt-BR", {
-            dateStyle: "long",
-            timeStyle: "short",
-            timeZone: "America/Fortaleza",
-          }).format(date);
-    const safeTitle = escapeHtml(event.title);
-    const safeType = escapeHtml(event.type);
-    const safeDate = escapeHtml(formattedDate);
-    const safeLocation = escapeHtml(event.location);
-    const safeDescription = escapeHtml(event.description).replace(/\r?\n/g, "<br>");
-    let sent = 0;
-
-    for (let index = 0; index < recipients.length; index += 5) {
-      const batch = recipients.slice(index, index + 5);
-      const results = await Promise.allSettled(
-        batch.map((recipient: EventEmailRecipient) =>
-          transporter.sendMail({
-            from,
-            to: recipient.email,
-            subject: `Novo ${event.type}: ${event.title}`,
-            text: [
-              `Olá, ${recipient.name}!`,
-              "",
-              `Um novo ${event.type} foi cadastrado para o Biker Girls 85: ${event.title}.`,
-              `Data: ${formattedDate}`,
-              event.location ? `Local: ${event.location}` : "",
-              event.description ? `Descrição: ${event.description}` : "",
-            ].filter(Boolean).join("\n"),
-            html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#242424"><h2>Novo ${safeType}: ${safeTitle}</h2><p>Olá, ${escapeHtml(recipient.name)}! Um novo evento foi cadastrado para o Biker Girls 85.</p><p><strong>Data:</strong> ${safeDate}</p>${safeLocation ? `<p><strong>Local:</strong> ${safeLocation}</p>` : ""}${safeDescription ? `<p><strong>Descrição:</strong><br>${safeDescription}</p>` : ""}<p>Esperamos você!</p></div>`,
-          })
-        )
-      );
-      sent += results.filter((result) => result.status === "fulfilled").length;
-      results.forEach((result) => {
-        if (result.status === "rejected") {
-          console.error(
-            `[Email] Falha ao notificar um membro sobre o evento "${event.title}":`,
-            result.reason
-          );
-        }
-      });
-    }
-
-    const failed = recipients.length - sent;
-    return {
-      status: failed === 0 ? "sent" : sent === 0 ? "failed" : "partial",
-      total: recipients.length,
-      sent,
-      failed,
-    };
-  } catch (error) {
-    console.error("[Email] Erro ao enviar notificações do novo evento:", error);
-    return { status: "failed", total: 0, sent: 0, failed: 0 };
-  }
-};
 
 const notifyAdminsOfNewApplication = async (application: {
   name: string;
@@ -1825,12 +1726,7 @@ app.post("/api/events", requireAdmin, async (req: Request, res: Response) => {
         },
       },
     });
-    const emailNotifications = await notifyMembersOfNewEvent(event);
-
-    return res.status(201).json({
-      ...eventToResponse(event, userId),
-      email_notifications: emailNotifications,
-    });
+    return res.status(201).json(eventToResponse(event, userId));
   } catch (error) {
     console.error("[Events] Erro ao criar evento:", error);
 

@@ -24,21 +24,8 @@ const EventDialog = ({ open, onClose, initial, onSaved }) => {
         await api.put(`/events/${initial.id}`, body);
         toast.success("Evento atualizado");
       } else {
-        const { data } = await api.post("/events", body);
-        const notifications = data.email_notifications;
-        if (notifications?.status === "disabled") {
-          toast.success("Evento criado. O envio de e-mails está temporariamente desativado.");
-        } else if (notifications?.status === "unconfigured") {
-          toast.warning("Evento criado, mas os e-mails não foram enviados: configure o SMTP no backend.");
-        } else if (notifications?.status === "partial") {
-          toast.warning(`Evento criado. E-mails enviados: ${notifications.sent}/${notifications.total}; falhas: ${notifications.failed}.`);
-        } else if (notifications?.status === "failed") {
-          toast.warning("Evento criado, mas não foi possível enviar os e-mails. Verifique o SMTP e os logs do backend.");
-        } else if (notifications?.total === 0) {
-          toast.success("Evento criado. Não há membros ativos para notificar.");
-        } else {
-          toast.success(`Evento criado. ${notifications.sent} membro(s) notificado(s) por e-mail.`);
-        }
+        await api.post("/events", body);
+        toast.success("Evento criado");
       }
       onSaved(); onClose();
     } catch (err) { toast.error(errMsg(err)); }
